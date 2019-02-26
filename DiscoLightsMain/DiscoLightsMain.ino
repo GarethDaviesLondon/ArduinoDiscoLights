@@ -7,26 +7,16 @@ DotStrip ds = new DotStrip(NUMPIXELS);
 void setup() {
 
   pinMode(LED_BUILTIN,OUTPUT);
+  delay(1000);
+  ds.turnon(1,255,0,0);
+  ds.show();
 
-
-  /*
-  OCR0A=0xAF;
-  TIMSK0 |= _BV(OCIE0A);
-  */
 
 }
 
 
 
 void loop() {
-/*
-  lightgraph(BARGRAPHMAX);
-  while (bargraph > 0)
-  {
-    lightgraph(bargraph);
-    bargraph--;
-  }
-*/
 }
 
 /*

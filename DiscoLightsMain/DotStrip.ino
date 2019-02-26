@@ -9,6 +9,7 @@
           pinMode(dataPin, OUTPUT);
           pinMode(clockPin,OUTPUT);
           setGlobalBrightnessByte(32); //Full On
+          Off(); //turn it all off now!
     }
 
     int DotStrip::Pixels (void)
@@ -56,9 +57,9 @@ void DotStrip::Off()
 {
   for (int a=0;a<numPixels;a++)
   {
-    LEDARRAY[a]=0x0; //Set top 8 bits to zero;
+    LEDARRAY[a]=0x0; //Set all bits to qaeo
   }
-  setGlobalBrightnessByte(32);
+  setGlobalBrightnessByte(32); //re-programme the top 8 bytes to be compliant.
 }
 
 
@@ -67,25 +68,22 @@ void DotStrip::show(void)
 {
   unsigned long mask = 0x8000; //Just the top bit;
   unsigned long msb;
-  unsigned long test=0xF0F0;
+  unsigned long temp=0;
   bool b;
-  msb = (test & mask)>>31;
-  b=bool(msb);
-  
-  
+  StartTX();
+  for (int a=0;a<numPixels;a++)
+  {
+    for (int b =0; b < 32; b++)
+    {
+      temp=LEDARRAY[a];
+      temp=temp<<b;
+      msb = (bool) (temp&mask)>>31;
+      sendBit(msb);
+    }
+  }
+  EndTX();
 }
 
-
-
-
-    void DotStrip::commandPixel(unsigned int red,unsigned int green, unsigned int blue)
-    {
-      //send GlobalContrl 
-      sendByteHigh();
-      if (red>0) {sendByteHigh();}else{sendByteLow();}
-      if (green>0) {sendByteHigh();}else{sendByteLow();}
-      if (blue>0) {sendByteHigh();}else{sendByteLow();} 
-    }
 
     void DotStrip::sendBit(bool val)
     //Data is clocked out on the rising clock edge.
@@ -103,40 +101,3 @@ void DotStrip::show(void)
     {
       for (int a=0; a<numPixels; a++) sendBit(LOW);
     }
-
-    void DotStrip::wipe()
-    {
-      StartTX();
-      for (int a=0;a<numPixels;a++)
-      {
-        clearPixel();
-      }
-      EndTX();
-    }
-    
-    void DotStrip::clearPixel()
-    {
-        for (int b=0;b<3;b++) sendBit(HIGH);
-        for (int b=0;b<29;b++) sendBit(LOW);
-    }
-
-
-     void DotStrip::sendByteHigh()
-     {
-      for (int a=0; a<8; a++)
-      {
-        sendBit(HIGH);
-      }
-    }
-    
-    void DotStrip::sendByteLow()
-    {
-      for (int a=0; a<8;a++)
-      {
-        sendBit(LOW);
-      }
-    }
-    
-    
-
-

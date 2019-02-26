@@ -19,11 +19,5 @@ class DotStrip
     void sendBit(bool val);
     void StartTX();
     void EndTX();
-    void wipe();
-    void clearPixel();
-    void sendByteHigh();
-    void sendByteLow();
-    void commandPixel(unsigned int red,unsigned int green, unsigned int blue);
-    
 };
 
