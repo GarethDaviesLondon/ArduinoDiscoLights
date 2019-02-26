@@ -1,17 +1,11 @@
 
 #include "DotStrip.h"
 #define NUMPIXELS 144 // Number of LEDs in strip
-#define DATAPIN    4
-#define CLOCKPIN   5
-#define BARGRAPHMAX 144
 
-int bargraph;
-
-DotStrip ds = new DotStrip(144);
+DotStrip ds = new DotStrip(NUMPIXELS);
   
 void setup() {
-  pinMode(DATAPIN, OUTPUT);
-  pinMode(CLOCKPIN,OUTPUT);
+
   pinMode(LED_BUILTIN,OUTPUT);
 
 
