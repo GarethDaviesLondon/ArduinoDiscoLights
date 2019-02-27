@@ -8,11 +8,12 @@ class DotStrip
     void turnon(int Pixel, int Red, int Green, int Blue, int Brightness);
     void brightness(int Pixel,int Brightness);
     void show();
-    void setGlobalBrightnessByte(unsigned char Brightness);
-    void off(void);
-
+    void setGlobalBrightness(unsigned char Brightness);
+    void offAll(void);
+    void offOne(int a);
   private:
 
+    int StripBrightness;
     int numPixels;
     int clockPin;
     int dataPin;
