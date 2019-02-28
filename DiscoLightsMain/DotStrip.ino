@@ -1,4 +1,4 @@
-//#define DEBUG 1
+//#define DEBUGDOTSTRIP
 
     DotStrip::DotStrip (int throwaway)
     {
@@ -23,12 +23,14 @@
 
     void DotStrip::turnon(int Pixel, int Red, int Green, int Blue)
     {
+
       if ((Pixel<0)||(Pixel>NUMPIXELS)) return;
       unsigned long temp;
       if (Pixel>=numPixels) {return;} //Array Out of Bounds Error Ignored.
       LEDARRAY[Pixel][3]= (unsigned char) Red;
       LEDARRAY[Pixel][2]= (unsigned char) Green;
       LEDARRAY[Pixel][1]= (unsigned char) Blue;
+
     }
 
 
@@ -37,17 +39,20 @@
 
 void DotStrip::setGlobalBrightness(unsigned char Brightness)
 {
+
   if (Brightness>B00011111) StripBrightness=B00011111;  // 5 Bits of Brightness;
   StripBrightness=Brightness|B11100000; // Set the top 3 bits to 1.
   for (int a=0;a<numPixels;a++)
   {
     LEDARRAY[a][0]=(unsigned char)StripBrightness;
   }
+
 }
 
 //Sets the Pixel Array to Zero Value;
 void DotStrip::offAll()
 {
+
   for (int a=0;a<numPixels;a++)
   {
     LEDARRAY[a][0]=0; //Set all bits to zero
@@ -55,16 +60,18 @@ void DotStrip::offAll()
     LEDARRAY[a][2]=0; //Set all bits to zero
     LEDARRAY[a][3]=0; //Set all bits to zero
   }
+ 
   setGlobalBrightness(StripBrightness); //re-programme the top 8 bytes to be compliant.
 }
 
 void DotStrip::offOne(int a)
 {
+
     if ((a<0)||(a>NUMPIXELS)) return;
-    //LEDARRAY[a][0]=StripBrightness|B11100000; //Brightness to max
     LEDARRAY[a][1]=0; //Set all bits to zero
     LEDARRAY[a][2]=0; //Set all bits to zero
     LEDARRAY[a][3]=0; //Set all bits to zero
+
 }
 
 //Send out the bits one by one through the array
@@ -75,7 +82,7 @@ int a,by,bi;
 bool mBit;
 unsigned char mByte;
 
-  #ifdef DEBUG
+  #ifdef DEBUGDOTSTRIP
       Serial.print(numPixels,DEC);
       Serial.println(" ARRAY SIZE - SEND STARTING");
   #endif
@@ -83,7 +90,7 @@ unsigned char mByte;
  for (a=0;a<numPixels;a++)
  {
 
-#ifdef DEBUG >0
+#ifdef DEBUGDOTSTRIP
       Serial.println();
       Serial.println("----------------------------");
       Serial.print("Array Element ");
@@ -101,7 +108,7 @@ unsigned char mByte;
   for (by=0;by<4;by++)
   {
       mByte=LEDARRAY[a][by];
-#ifdef DEBUG >1
+#ifdef DEBUGDOTSTRIP
       Serial.println();
       Serial.print("Byte ");
       Serial.print(by,DEC);
@@ -117,7 +124,7 @@ unsigned char mByte;
        mByte=mByte&B10000000;
        mByte=mByte>>7;
        mBit=(bool)mByte;
-#ifdef DEBUG > 1    
+#ifdef DEBUGDOTSTRIP
       Serial.print(" Bit:");
       Serial.print(bi,DEC);
       Serial.print(",");
@@ -133,7 +140,7 @@ unsigned char mByte;
   }
  }
  endTX();
-#ifdef DEBUG 
+#ifdef DEBUGDOTSTRIP 
       Serial.println("ARRAY SEND COMPLETE");
 #endif
 }
