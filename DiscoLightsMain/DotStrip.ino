@@ -115,7 +115,25 @@ unsigned char mByte;
       Serial.print(" Contains ");
       Serial.print(mByte,BIN);
       Serial.println(" Going into Bit Sending Loop");
+#endif
+      
+      unsigned char tmpByte=mByte;
+      for (bi=0;bi<8;bi++)
+      {
+        //Set clock & data bit low
+        PORTD = PORTD & B11001111;
+        if ( ( B10000000 & tmpByte) > 0 )   
+        {
+          PORTD = PORTD | B00110000;
+        }
+        else
+        {
+          PORTD = PORTD | B00100000;
+        }
+        tmpByte<<1;
+      }
 
+/*
 #endif DEBUG
     for (bi=0;bi<8;bi++)
     {
@@ -136,7 +154,8 @@ unsigned char mByte;
       PORTD = PORTD | mBit<<4;
       //Bring up clock latch
       PORTD = PORTD | B00100000;
-    }  
+    }
+    */  
   }
  }
  endTX();
