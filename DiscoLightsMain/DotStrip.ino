@@ -1,4 +1,7 @@
 //#define DEBUGDOTSTRIP
+//#define SLOWMODE
+#define NORMALMODE
+
 
     DotStrip::DotStrip (int throwaway)
     {
@@ -25,14 +28,22 @@
     {
 
       if ((Pixel<0)||(Pixel>NUMPIXELS)) return;
-      unsigned long temp;
-      if (Pixel>=numPixels) {return;} //Array Out of Bounds Error Ignored.
       LEDARRAY[Pixel][3]= (unsigned char) Red;
       LEDARRAY[Pixel][2]= (unsigned char) Green;
       LEDARRAY[Pixel][1]= (unsigned char) Blue;
-
     }
 
+
+   void DotStrip::turnon(int Pixel, int Red, int Green, int Blue,int Brightness)
+    {
+      if ((Pixel>=numPixels) || (Pixel<0)) {return;} //Array Out of Bounds Error Ignored.
+      LEDARRAY[Pixel][3]= (unsigned char) Red;
+      LEDARRAY[Pixel][2]= (unsigned char) Green;
+      LEDARRAY[Pixel][1]= (unsigned char) Blue;
+      if (Brightness>B00011111) Brightness=B00011111;  // 5 Bits of Brightness;
+      Brightness=Brightness|B11100000; // Set the top 3 bits to 1.
+      LEDARRAY[Pixel][0]= (unsigned char) Brightness;
+    }
 
 //The top Byte of the Pixel Word controls brighness. The top three bits are always 1 as part of a protocol
 //Leaves the bottom 5 bits to control brightness in range 0-31;
@@ -58,10 +69,8 @@ void DotStrip::offAll()
     LEDARRAY[a][0]=0; //Set all bits to zero
     LEDARRAY[a][1]=0; //Set all bits to zero
     LEDARRAY[a][2]=0; //Set all bits to zero
-    LEDARRAY[a][3]=0; //Set all bits to zero
+    LEDARRAY[a][3]=B11100000; //Set all bits to zero
   }
- 
-  setGlobalBrightness(StripBrightness); //re-programme the top 8 bytes to be compliant.
 }
 
 void DotStrip::offOne(int a)
@@ -81,6 +90,7 @@ void DotStrip::show(void)
 int a,by,bi;
 bool mBit;
 unsigned char mByte;
+unsigned char tmpByte;
 
   #ifdef DEBUGDOTSTRIP
       Serial.print(numPixels,DEC);
@@ -116,8 +126,9 @@ unsigned char mByte;
       Serial.print(mByte,BIN);
       Serial.println(" Going into Bit Sending Loop");
 #endif
-      
-      unsigned char tmpByte=mByte;
+
+#ifdef NORMALMODE
+      tmpByte=mByte;
       for (bi=0;bi<8;bi++)
       {
         //Set clock & data bit low
@@ -132,9 +143,11 @@ unsigned char mByte;
         }
         tmpByte<<1;
       }
+#endif NORMALMODE
 
-/*
-#endif DEBUG
+
+#ifdef SLOWMODE
+
     for (bi=0;bi<8;bi++)
     {
        mByte=LEDARRAY[a][by];
@@ -147,7 +160,7 @@ unsigned char mByte;
       Serial.print(bi,DEC);
       Serial.print(",");
       Serial.print(mBit);
-#endif DEBUG 
+#endif DEBUGSTRIP 
       //Set clock & data bit low
       PORTD = PORTD & B11001111;
       //Set data bit
@@ -155,7 +168,7 @@ unsigned char mByte;
       //Bring up clock latch
       PORTD = PORTD | B00100000;
     }
-    */  
+#endif  
   }
  }
  endTX();
@@ -165,7 +178,7 @@ unsigned char mByte;
 }
 
 
-    void DotStrip::sendBit(bool val)
+void DotStrip::sendBit(bool val)
     //Data is clocked out on the rising clock edge.
     {
       //Set clock & data bit low
@@ -176,12 +189,16 @@ unsigned char mByte;
       PORTD = PORTD | B00100000;
     }
 
-    void DotStrip::startTX()
+void DotStrip::startTX()
     {
-      for (int a=0; a<32; a++) sendBit(LOW);
+      for (int a=0; a<32; a++) 
+      {
+                PORTD = PORTD & B11001111;
+                PORTD = PORTD | B00100000;
+      }
     }
     
-    void DotStrip::endTX()
+void DotStrip::endTX()
     {
       for (int a=0; a<numPixels; a++) sendBit(LOW);
     }

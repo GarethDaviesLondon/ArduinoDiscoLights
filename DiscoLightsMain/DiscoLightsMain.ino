@@ -10,10 +10,27 @@ int Counter=0; // This is a counter to confirm the ISR is firing correctly.
 
 DotStrip *ds;
 int timer1_counter;
+unsigned char RED,GREEN,BLUE;
+int BassAnalogPin = A7;
+int TrebleAnalogPin = A6;
+int BassTrigger = 2;
+int TrebleTrigger = 3;
 
 bool Update = false;
   
 void setup() {
+      RED=255;
+      GREEN=0;
+      BLUE=0;
+
+/////////////////////////////SET UP PINS
+
+pinMode (BassAnalogPin,INPUT);
+pinMode (TrebleAnalogPin,INPUT);
+pinMode (BassTrigger,INPUT);
+pinMode (TrebleTrigger,INPUT);
+
+
 #ifdef DEBUGMAIN
       Serial.begin(57600);     //Enable serial monitor line
       Serial.println("Hello I'm Alive");  
@@ -21,28 +38,101 @@ void setup() {
 #endif
     ds = new DotStrip(1);
     ds->setGlobalBrightness(1);
-    configTimer();
+    //configTimer();
+    attachInterrupt(0,printBase,RISING);
+    attachInterrupt(1,printTreble,RISING);
+}
 
-
+void loop ()
+{
+  delay (1000);
 }
 
 
+void printBase()
+{
+  noInterrupts();
+  int a,b;
+  //a = analogRead(TrebleAnalogPin);
+  b = analogRead(BassAnalogPin);
+  Serial.print("Read : ");
+  //Serial.print(a);
+  Serial.print(" Bass : ");
+  Serial.print(b);
+  Serial.println();
+  interrupts();
+}
+
+
+void printTreble()
+{
+  noInterrupts();
+  int a,b;
+  a = analogRead(TrebleAnalogPin);
+  //b = analogRead(BassAnalogPin);
+  Serial.print("Read : ");
+  Serial.print(" Treble ");
+  Serial.print(a);
+  //Serial.print(" Bass : ");
+  //Serial.print(b);
+  Serial.println();
+  interrupts();
+}
+
+/*
 
 void loop() {
-  stopTimerInterrupt();
   int a =0;
-  for(a=0;a<NUMPIXELS;a++)
+  int b=0;
+  int c=10;
+  int trail=30;
+  int loop=1;
+  for (c=0;c<trail;c++)
   {
-    stopTimerInterrupt();
-    ds->turnon(a,255,0,0);
-    ds->turnon(a+1,255,0,0);
-    ds->turnon(a+2,255,0,0);
-    ds->offOne(a-1);
-    Update = true;
-    startTimerInterrupt();
+    ds->offAll();
+    for(a=0;a<NUMPIXELS;a++)
+    {
+      stopTimerInterrupt();
+      ds->turnon(a+trail,RED,GREEN,BLUE,31);
+      ds->turnon(NUMPIXELS-a-trail,RED,GREEN,BLUE,31);
+      for (b=0;b<c;b++)
+      {
+        ds->turnon(a+trail,RED,GREEN,BLUE,1);
+        ds->turnon(NUMPIXELS-b,RED,GREEN,BLUE,1);
+        if (loop==1) {if (RED++==0) if (GREEN++==0) BLUE++; }//if (BLUE=254) loop++;}
+        if (loop==2) {if (GREEN++==0) if (BLUE++==0) RED++; }//if (RED=254) loop++;}
+        if (loop==3) {if (BLUE++==0) if (RED++==0) GREEN++;}//if (GREEN=254) loop++;}
+        if (loop==4) {if (BLUE++==0) if (GREEN++==0) RED++; }//if (RED=254) loop++;}
+        if (loop==5) {if (GREEN++==0) if (RED++==0) BLUE++; }//if (BLUE=254) loop=1;}
+      }
+      ds->offOne(a-c+1);
+      ds->offOne(NUMPIXELS+1-a);
+      Update = true;
+      startTimerInterrupt();
+      if (loop==6) {
+        loop=0;
+        //flash();
+      }
+  
+      loop++;
+      }
   }
 }
 
+*/
+
+void flash()
+{
+  for (int a=0;a<20;a++)
+  {
+    for (int b=0;b<NUMPIXELS;b++)
+    {
+      ds->turnon(b,255,255,255,3);
+      ds->show();
+    }
+    ds->offAll();
+  }
+}
 
 void configTimer()
 {
@@ -148,13 +238,13 @@ void stopTimerInterrupt()
 
 ISR(TIMER2_COMPA_vect)        // interrupt service routine 
 {
-if (Update==false) return;
-stopTimerInterrupt();
-#ifdef DEBUGISR
+  if (Update==false) return;
+  stopTimerInterrupt();
+ #ifdef DEBUGISR
   Serial.print("Ahem ");
   Serial.println(Counter,DEC);
   Counter++;
-#endif
+ #endif
   ds->show();
   Update=false;
   startTimerInterrupt();
