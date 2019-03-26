@@ -82,7 +82,7 @@ void loop ()
     ds->turnGreen(NUMPIXELS-a,scale1*10);
   }
 
-  intensity=BASEINTENSITY+(scale2*5);
+  intensity=BASEINTENSITY+(scale2*10);
   for (a=0;a<scale2;a++)
   {
     ds->turnRed(mid1+a,intensity);
