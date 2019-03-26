@@ -17,15 +17,24 @@ class DotStrip
     void setGlobalBrightness(byte Brightness);
     void offAll(void);
     void offOne(int a);
+    int pixels(void)
+    {
+      return (numPixels);
+    }
+    
   private:
-
+  
+    int clockPin = 6;
+    int dataPin = 5;
+    int numPixels = NUMPIXELS;
     int StripBrightness;
-    int clockPin;
-    int dataPin;
     byte LEDARRAY[NUMPIXELS][4];
-    void sendBit(bool val);
+    byte PortDLowMASK;
+    byte PortDSendZERO;
+    byte PortDSendONE;
     void startTX();
     void endTX();
+    void testPins();
 };
 
 #endif

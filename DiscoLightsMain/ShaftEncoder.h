@@ -7,9 +7,10 @@
 #define DEBUGSHAFTENCODER
 
 //These are the digital pins that the shaft encoder will be connected to.
-#define shaftOutputA 2
+#define shaftPushSw 2
+#define shaftOutputA 3
 #define shaftOutputB 4
-#define shaftPushSw 3
+
 
 //These are used to address EEPROM memory.
 #define SIGNATURE 0xAB
@@ -26,7 +27,5 @@ bool shaftBLastState;
 
 int shaftCounter;
 int sMax,sMin;
-
-
 
 #endif

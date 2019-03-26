@@ -1,17 +1,66 @@
 //#define DEBUGDOTSTRIP
-//#define SLOWMODE
 #define NORMALMODE
 
-    DotStrip::DotStrip (int throwaway)
+    DotStrip::DotStrip (int numP)
     {
-          dataPin=4;
-          clockPin=5;
+          if ( (numP > NUMPIXELS) | (numP < 0) )
+          {
+            numPixels = NUMPIXELS;
+          }
+          else
+          {
+            numPixels=numP;
+          }
+          
           StripBrightness=31;
           pinMode(dataPin, OUTPUT);
           pinMode(clockPin,OUTPUT);       
+          
+          /*
+           * In case you need to check the math, this shows that it works!
+           * as you will see the HEX output is the same.
+           * 
+          PortDLowMASK=B11001111;
+          PortDSendONE= B00110000;
+          PortDSendZERO=B00100000;
+          
+          Serial.println(PortDLowMASK,HEX);
+          Serial.println(PortDSendONE,HEX);
+          Serial.println(PortDSendZERO,HEX);
+          
+          PortDSendZERO = 0x01 << 5; //Move the 1 in the byte to the clock position 
+          PortDSendONE = PortDSendZERO | 0x01 << 4; // Sets the two bits high by adding in the data mask
+          PortDLowMASK = 0XFF ^ PortDSendONE;  //XOR will set the two bits to zero, everything else 1    
+
+          Serial.println(PortDLowMASK,HEX);
+          Serial.println(PortDSendONE,HEX);
+          Serial.println(PortDSendZERO,HEX);
+
+          */
+
+          //Set up the bit masks for the data sending later in the code base
+          PortDSendZERO = 0x01 << clockPin; //Move the 1 in the byte to the clock position 
+          PortDSendONE = PortDSendZERO | 0x01 << dataPin; // Sets the two bits high by adding in the data mask
+          PortDLowMASK = 0XFF ^ PortDSendONE;  //XOR will set the two bits to zero, everything else 1
+
+          //while(1) testPins();
+          
           offAll(); //turn it all off now, but initialise the brightness levels;
-          show();
+          show();          
+
     }
+
+void DotStrip::testPins()
+{
+         PORTD = PORTD & PortDLowMASK;
+         delay(25);
+         PORTD = PORTD | PortDSendONE;
+         delay(25);
+         PORTD = PORTD & PortDLowMASK;
+         delay(25);
+         PORTD = PORTD | PortDSendZERO;
+         delay(25);
+}
 
 
 /*This turns on a pixel inside the array with the specified amount etc.*/
@@ -20,28 +69,28 @@
 
     void DotStrip::turnRed(int Pixel, byte Red)
     {
-      if ((Pixel<0)||(Pixel>NUMPIXELS)) return;  
+      if ((Pixel<0)||(Pixel>numPixels)) return;  
       LEDARRAY[Pixel][3]= Red;
       LEDARRAY[Pixel][0]|= B11100000; //This is a validation check the top three bits need to be HIGH for TX
     } 
 
     void DotStrip::turnGreen(int Pixel, byte Green)
     {
-      if ((Pixel<0)||(Pixel>NUMPIXELS)) return;  
+      if ((Pixel<0)||(Pixel>numPixels)) return;  
       LEDARRAY[Pixel][2]= Green;
       LEDARRAY[Pixel][0]|= B11100000; //This is a validation check the top three bits need to be HIGH for TX
     } 
   
     void DotStrip::turnBlue(int Pixel, byte Blue)
     {
-      if ((Pixel<0)||(Pixel>NUMPIXELS)) return;  
+      if ((Pixel<0)||(Pixel>numPixels)) return;  
       LEDARRAY[Pixel][1]= Blue;
       LEDARRAY[Pixel][0]|= B11100000; //This is a validation check the top three bits need to be HIGH for TX
     } 
   
     void DotStrip::turnOn(int Pixel, byte Red, byte Green, byte Blue)
     {
-      if ((Pixel<0)||(Pixel>NUMPIXELS)) return;
+      if ((Pixel<0)||(Pixel>numPixels)) return;
       LEDARRAY[Pixel][3]= Red;
       LEDARRAY[Pixel][2]= Green;
       LEDARRAY[Pixel][1]= Blue;
@@ -51,7 +100,7 @@
 
    void DotStrip::turnOn(int Pixel, byte Red, byte Green, byte Blue, byte Brightness)
     {
-      if ((Pixel>=NUMPIXELS) || (Pixel<0)) {return;} //Array Out of Bounds Error Ignored.
+      if ((Pixel>=numPixels) || (Pixel<0)) {return;} //Array Out of Bounds Error Ignored.
       LEDARRAY[Pixel][2]= Green;
       LEDARRAY[Pixel][1]= Blue;
       LEDARRAY[Pixel][3]= Red;
@@ -69,7 +118,7 @@ void DotStrip::setGlobalBrightness(byte Brightness)
 
   if (Brightness>B00011111) StripBrightness=B00011111;  // 5 Bits of Brightness;
   StripBrightness=Brightness|B11100000; // Set the top 3 bits to 1.
-  for (int a=0;a<NUMPIXELS;a++)
+  for (int a=0;a<numPixels;a++)
   {
     LEDARRAY[a][0]=(byte)StripBrightness;
   }
@@ -81,7 +130,7 @@ void DotStrip::setGlobalBrightness(byte Brightness)
 void DotStrip::offAll()
 {
 
-  for (int a=0;a<NUMPIXELS;a++)
+  for (int a=0;a<numPixels;a++)
   {
     LEDARRAY[a][3]=0; //Set all bits to zero
     LEDARRAY[a][1]=0; //Set all bits to zero
@@ -93,7 +142,7 @@ void DotStrip::offAll()
 void DotStrip::offOne(int a)
 {
 
-    if ((a<0)||(a>NUMPIXELS)) return;
+    if ((a<0)||(a>numPixels)) return;
     LEDARRAY[a][1]=0; //Set all bits to zero
     LEDARRAY[a][2]=0; //Set all bits to zero
     LEDARRAY[a][3]=0; //Set all bits to zero
@@ -110,38 +159,39 @@ void DotStrip::hide(void)
   tmp[3]=0;
   startTX();
   
-  for (int a=0;a<NUMPIXELS;a++)
+  for (int a=0;a<numPixels;a++)
   {
     for (int b = 0; b<4;b++)
     {
       tmpByte=tmp[b];
       if (b=0)
       {
-        tmpByte=B11100000 | LEDARRAY[a][0];
+        tmpByte=B11100000; //| LEDARRAY[a][0];
       }
       for (int bi=0;bi<8;bi++)
         {
           //Set clock & data bit low
-          PORTD = PORTD & B11001111;
+          PORTD = PORTD & PortDLowMASK;
           if ( ( B10000000 & tmpByte) > 0 )   
           {
-            PORTD = PORTD | B00110000;
+            PORTD = PORTD | PortDSendONE;
           }
           else
           {
-            PORTD = PORTD | B00100000;
+            PORTD = PORTD | PortDSendZERO;
           }
           tmpByte<<1;
         }
     }
   }
   endTX();
+  
 }
 
 //Send out the bits one by one through the array
 void DotStrip::show(void)
 {
-
+ 
 int a,by,bi;
 bool mBit;
 byte mByte;
@@ -151,8 +201,9 @@ byte tmpByte;
       Serial.print(numPixels,DEC);
       Serial.println(" ARRAY SIZE - SEND STARTING");
   #endif
+
  startTX();
- for (a=0;a<NUMPIXELS;a++)
+ for (a=0;a<numPixels;a++)
  {
 
 #ifdef DEBUGDOTSTRIP
@@ -187,43 +238,18 @@ byte tmpByte;
       for (bi=0;bi<8;bi++)
       {
         //Set clock & data bit low
-        PORTD = PORTD & B11001111;
+        PORTD = PORTD & PortDLowMASK;
         if ( ( B10000000 & tmpByte) > 0 )   
         {
-          PORTD = PORTD | B00110000;
+          PORTD = PORTD | PortDSendONE;
         }
         else
         {
-          PORTD = PORTD | B00100000;
+          PORTD = PORTD | PortDSendZERO;
         }
         tmpByte<<1;
       }
 #endif NORMALMODE
-
-
-#ifdef SLOWMODE
-
-    for (bi=0;bi<8;bi++)
-    {
-       mByte=LEDARRAY[a][by];
-       mByte=mByte<<bi;
-       mByte=mByte&B10000000;
-       mByte=mByte>>7;
-       mBit=(bool)mByte;
-#ifdef DEBUGDOTSTRIP
-      Serial.print(" Bit:");
-      Serial.print(bi,DEC);
-      Serial.print(",");
-      Serial.print(mBit);
-#endif DEBUGSTRIP 
-      //Set clock & data bit low
-      PORTD = PORTD & B11001111;
-      //Set data bit
-      PORTD = PORTD | mBit<<4;
-      //Bring up clock latch
-      PORTD = PORTD | B00100000;
-    }
-#endif  
   }
  }
  endTX();
@@ -233,27 +259,20 @@ byte tmpByte;
 }
 
 
-void DotStrip::sendBit(bool val)
-    //Data is clocked out on the rising clock edge.
-    {
-      //Set clock & data bit low
-      PORTD = PORTD & B11001111;
-      //Set data bit
-      PORTD = PORTD | val<<4;
-      //Bring up clock latch
-      PORTD = PORTD | B00100000;
-    }
-
 void DotStrip::startTX()
     {
       for (int a=0; a<32; a++) 
       {
-                PORTD = PORTD & B11001111;
-                PORTD = PORTD | B00100000;
+                PORTD = PORTD & PortDLowMASK;
+                PORTD = PORTD | PortDSendZERO;
       }
     }
     
 void DotStrip::endTX()
     {
-      for (int a=0; a<NUMPIXELS; a++) sendBit(LOW);
+      for (int a=0; a<numPixels; a++) 
+      {
+           PORTD = PORTD & PortDLowMASK;
+           PORTD = PORTD | PortDSendZERO;
+      }
     }

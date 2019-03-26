@@ -11,7 +11,10 @@ void initShaftEncoder(int Min,int Max)
   pinMode(shaftOutputA,INPUT_PULLUP);
   pinMode(shaftOutputB,INPUT_PULLUP);
   pinMode(shaftPushSw,INPUT_PULLUP);
-  shaftConfirm(3);
+  shaftBState = digitalRead(shaftOutputB);
+  shaftAState = digitalRead(shaftOutputA); // Reads the "current" state of the outputA
+  shaftALastState = shaftAState; // Updates the previous state of the outputA with the current state
+  shaftBLastState = shaftBState;
   
   if (EEPROM.read(0) != SIGNATURE)
     {
@@ -30,6 +33,7 @@ void initShaftEncoder(int Min,int Max)
     }
     shaftCounter=EEPROM.read(shaftPROPOSEDRUNSTATE);
     checkShaftCounter();
+    
     attachInterrupt(digitalPinToInterrupt(shaftOutputA),shaftRotateISR,CHANGE);
     attachInterrupt(digitalPinToInterrupt(shaftPushSw),shaftPushSwitchISR,LOW);
 
