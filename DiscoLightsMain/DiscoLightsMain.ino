@@ -1,6 +1,7 @@
 
 #include "DotStrip.h"
-//#include "TImerControl.h"
+#include "ShaftEncoder.h"
+#include "Sequence.h";
 
 #define DEBUGMAIN
 //#define DEBUGISR
@@ -19,11 +20,13 @@ int Counter=0; // This is a counter to confirm the ISR is firing correctly.
 #define BASEINTENSITY 30
 
 DotStrip *ds;
+Sequence *pattern;
+
 int timer1_counter;
 int BassAnalogPin = A7;
-int TrebleAnalogPin = A6;
-int BassTrigger = 2;
-int TrebleTrigger = 3;
+int MidAnalogPin = A6;
+int TrebleAnalogPin = A5;
+
 int intensity = 30;
 unsigned char mainRED=128;
 unsigned char mainBLUE=128;
@@ -33,16 +36,15 @@ int SizeRed=0;
 int SizeBlue=0;
 
 bool Update = false;
-  
+
 void setup() {
 
 
 /////////////////////////////SET UP PINS
 
 pinMode (BassAnalogPin,INPUT);
+pinMode (MidAnalogPin,INPUT);
 pinMode (TrebleAnalogPin,INPUT);
-pinMode (BassTrigger,INPUT);
-pinMode (TrebleTrigger,INPUT);
 
 
 #ifdef DEBUGMAIN
@@ -50,19 +52,21 @@ pinMode (TrebleTrigger,INPUT);
       Serial.println("Hello I'm Alive");  
       Serial.println("Debug Enabled");
 #endif
+
+    initShaftEncoder(0,5);
     ds = new DotStrip(1);
+    pattern = new Sequence (ds);
     ds->setGlobalBrightness(5);
     ds->offAll();
-    ds->turnRed(2,128);
     ds->show();
-    //configTimer();
-    //attachInterrupt(CHAN1,Chan_1_On,RISING);
-    //attachInterrupt(CHAN2,Chan_2_On,RISING);
 }
 
 
 void loop ()
 {
+
+  
+  /*
   //noInterrupts();
   int vu1 = analogRead(TrebleAnalogPin);
   int vu2 = analogRead(BassAnalogPin);
@@ -102,95 +106,7 @@ void loop ()
   delay(20);
   ds->offAll();
   ds->show();
+
+  */
 }
-
-void Chan_1_On()
-{
-  noInterrupts();
-  SizeRed+=REDINCREMENT;
-  if (SizeRed<0) SizeRed=0;
-  if (SizeRed>(NUMPIXELS/2)) SizeRed=NUMPIXELS/2;
-  
-  mainRED = 128;
-  int a;
-  
-  
-  for ( a=0;a<=SizeRed;a++)
-  {
-    ds->turnRed(a,mainRED);
-  }
-  for ( a=NUMPIXELS;a>=(NUMPIXELS-SizeRed);a--)
-  {
-    ds->turnRed(a,mainRED);
-  }
-  
-  ds->show();
-  attachInterrupt(CHAN1,Chan_1_Off,FALLING);
-  interrupts();
-}
-
-void Chan_1_Off()
-{
-  noInterrupts();
-
-
-  mainRED = 0;
-  int a;
-
-  for ( a=0;a<=SizeRed;a++)
-  {
-    ds->turnRed(a,mainRED);
-  }
-  
-  for ( a=NUMPIXELS;a>=(NUMPIXELS-SizeRed);a--)
-  {
-    ds->turnRed(a,mainRED);
-  }
-  
-  ds->show();
-  SizeRed-=REDINCREMENT;
-  if (SizeRed<0) SizeRed=0;
-  if (SizeRed>NUMPIXELS) SizeRed=NUMPIXELS;
-  
-  attachInterrupt(CHAN1,Chan_1_On,RISING);
-  interrupts();
-}
-
-
-void Chan_2_On()
-{
-  noInterrupts();
-  mainBLUE = 128;
-  int a;
-  
-  for (a=0;a<NUMPIXELS;a++)
-  {
-    ds->turnBlue(a,mainBLUE);
-  }
-  ds->show();
-  attachInterrupt(CHAN2,Chan_2_Off,FALLING);
-  interrupts();
-}
-
-void Chan_2_Off()
-{
-  noInterrupts();
-  mainBLUE = 0;
-  int a;
-  
-  for (a=0;a<NUMPIXELS;a++)
-  {
-    ds->turnBlue(a,mainBLUE);
-  }
-  ds->show();
-  attachInterrupt(CHAN2,Chan_2_On,RISING);
-  interrupts();
-}
-
-
-/*
-
-v
-
-*/
 

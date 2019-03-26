@@ -2,7 +2,6 @@
 //#define SLOWMODE
 #define NORMALMODE
 
-
     DotStrip::DotStrip (int throwaway)
     {
           dataPin=4;
@@ -31,7 +30,6 @@
       if ((Pixel<0)||(Pixel>NUMPIXELS)) return;  
       LEDARRAY[Pixel][2]= Green;
       LEDARRAY[Pixel][0]|= B11100000; //This is a validation check the top three bits need to be HIGH for TX
-
     } 
   
     void DotStrip::turnBlue(int Pixel, byte Blue)
@@ -39,25 +37,21 @@
       if ((Pixel<0)||(Pixel>NUMPIXELS)) return;  
       LEDARRAY[Pixel][1]= Blue;
       LEDARRAY[Pixel][0]|= B11100000; //This is a validation check the top three bits need to be HIGH for TX
-
     } 
   
     void DotStrip::turnOn(int Pixel, byte Red, byte Green, byte Blue)
     {
-
       if ((Pixel<0)||(Pixel>NUMPIXELS)) return;
       LEDARRAY[Pixel][3]= Red;
       LEDARRAY[Pixel][2]= Green;
       LEDARRAY[Pixel][1]= Blue;
       LEDARRAY[Pixel][0]|= B11100000; //This is a validation check the top three bits need to be HIGH for TX
-
     }
 
 
    void DotStrip::turnOn(int Pixel, byte Red, byte Green, byte Blue, byte Brightness)
     {
       if ((Pixel>=NUMPIXELS) || (Pixel<0)) {return;} //Array Out of Bounds Error Ignored.
-
       LEDARRAY[Pixel][2]= Green;
       LEDARRAY[Pixel][1]= Blue;
       LEDARRAY[Pixel][3]= Red;

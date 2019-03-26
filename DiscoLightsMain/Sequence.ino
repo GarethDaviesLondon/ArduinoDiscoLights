@@ -1,4 +1,4 @@
-#include "Sequences.h"
+#include "Sequence.h"
 
 Sequence::Sequence (DotStrip *dotin)
 {
@@ -33,7 +33,6 @@ void Sequence::groovy(void)
       ds->offOne(a-c+1);
       ds->offOne(NUMPIXELS+1-a);
       Update = true;
-      //startTimerInterrupt();
       if (loop==6) {
         loop=0;
       }
