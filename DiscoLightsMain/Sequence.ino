@@ -1,10 +1,14 @@
 #include "Sequence.h"
+#include "ShaftEncoder.h"
+
+#define SEQUENCEDEUG
 
 Sequence::Sequence (DotStrip *dotin)
 {
   pinMode (BassAnalogPin,INPUT);
   pinMode (MidAnalogPin,INPUT);
   pinMode (TrebleAnalogPin,INPUT);
+  pinMode (COMMLED,OUTPUT);
   ds=dotin;
   ds->setGlobalBrightness(GlobalBrightness);
   ds->offAll();
@@ -16,6 +20,7 @@ void Sequence::strobeWhite(int loops)
 {
   for (int a = 0; a<loops;a++)
      {
+      if (checkBoot()) return; //abort if interrupt happened.
        for (int a = 0;a <ds->pixels();a++)
        {
         ds->turnOn(a,255,255,255,255);
@@ -32,6 +37,7 @@ void Sequence::strobeColour(int code,int loops)
 {
   for (int count=0;count<loops;count++)
       {
+        if (checkBoot()) return; //abort if interrupt happened.
         for (int a=0;a<ds->pixels();a++)
         {
           switch (code)
@@ -50,6 +56,7 @@ void Sequence::strobeColour(int code,int loops)
       }
 }
 
+
 void Sequence::redBuild(void)
 {
    int kitLength=10; //numper of pixels to chase each other.
@@ -58,6 +65,7 @@ void Sequence::redBuild(void)
       kitLength=wizloop;
       for (int kit = 0; kit < ds->pixels() -kitLength;kit++)
       {
+        if (checkBoot()) return; //abort if interrupt happened.
         ds->offAll();
         for (int lightup = 0; lightup < kitLength; lightup++)
         {
@@ -69,6 +77,7 @@ void Sequence::redBuild(void)
   
       for (int kit = ds->pixels() -kitLength; kit >=0;kit--)
       {
+        if (checkBoot()) return; //abort if interrupt happened.
         ds->offAll();
         for (int lightup = 0; lightup < kitLength; lightup++)
         {
@@ -81,11 +90,41 @@ void Sequence::redBuild(void)
     } //Wizloop
 }
 
+bool Sequence::checkBoot(void)
+{
+  return shaftRebootFlag;
+}
+
+
+void Sequence::communicate(int mode)
+{
+  Serial.print("Selected Mode : ");
+  Serial.println(mode);
+  if (mode<=0)
+  {
+    //strobeColour(0,2);
+    for (int a=0;a<20;a++){
+      digitalWrite(COMMLED,HIGH);
+      delay(5000);
+      digitalWrite(COMMLED,LOW);
+      delay(5000);
+    }
+  }
+  else
+  {
+    for (int a=0;a<mode;a++){
+      //strobeWhite(2);
+      digitalWrite(COMMLED,HIGH);
+      delay(10000);
+      digitalWrite(COMMLED,LOW);
+      delay(20000);
+    }
+  }
+  delay(1000);
+}
 
 void Sequence::superFlash(void)
-{
-  while(1)
-  {   
+{  
      redBuild();
      strobeColour(1,20);
      strobeColour(2,20);
@@ -98,16 +137,79 @@ void Sequence::superFlash(void)
       d+=50;
      }
      strobeColour(0,5);
-  }
+     if (checkBoot()) return; //abort if interrupt happened.
 }
 
 void Sequence::boogie(void)
 {
-  while(1) //Loop here forever, hotel california style
-  {
     int vu1 = analogRead(TrebleAnalogPin);
     int vu2 = analogRead(BassAnalogPin);
-    int vu3 = vu1-vu3;
+    int vu3 = analogRead(MidAnalogPin);
+    bool bassGate,midGate,topGate=false;
+    if (vu1Peak<vu1) vu1Peak=vu1;
+    if (vu2Peak<vu2) vu2Peak=vu2;
+    if (vu3Peak<vu3) vu3Peak=vu3;
+    if (vu1Min>vu1) vu1Min=vu1;
+    if (vu2Min>vu2) vu2Min=vu2;
+    if (vu3Min>vu3) vu3Min=vu3;
+
+
+
+if (vu1<SEQUENCEGATEtop)
+{
+    topGate=true;
+}
+if (vu2<SEQUENCEGATEbass)
+{
+  bassGate=true;
+}
+if (vu3<SEQUENCEGATEmid)
+{
+  midGate=true;
+}
+
+/*
+if ( (midGate + bassGate + topGate) > 0) 
+{
+  #ifdef SEQUENCEDEUG
+  Serial.println("Gated return");
+  #endif
+  return;
+}
+*/
+
+#ifdef SEQUENCEDEUG
+debugCounter++;
+if (debugCounter > 25)
+{
+  debugCounter=0;
+  Serial.print("BASS ");
+  if (vu2Peak<10) Serial.print("0");
+  if (vu2Peak<100) Serial.print("0");
+  Serial.print(vu2Peak);
+  Serial.print (":");
+  if (vu2Min<10) Serial.print("0");
+  if (vu2Min<100) Serial.print("0");
+  Serial.print(vu2Min);
+  Serial.print(" MID ");
+  if (vu3Peak<10) Serial.print("0");
+  if (vu3Peak<100) Serial.print("0");
+  Serial.print(vu3Peak);
+  Serial.print (":");
+  if (vu3Min<10) Serial.print("0");
+  if (vu3Min<100) Serial.print("0");
+  Serial.print(vu3Min);
+  Serial.print(" TOP ");
+  if (vu1Peak<10) Serial.print("0");
+  if (vu1Peak<100) Serial.print("0");
+  Serial.print(vu1Peak);
+  Serial.print (":");
+  if (vu1Min<10) Serial.print("0");
+  if (vu1Min<100) Serial.print("0");
+  Serial.print(vu1Min);
+  Serial.print("\n");
+}
+#endif
     
     int scale1 = vu1*ENDSCALER;
     int scale2 = vu2*MIDSCALER;
@@ -143,14 +245,11 @@ void Sequence::boogie(void)
     delay(20);
     ds->offAll();
     ds->show();
-  }
 }
 
 
 void Sequence::groovy(void)
 {
-  while (1)
-  {
     int a =0;
     int b=0;
     int c=10;
@@ -161,6 +260,7 @@ void Sequence::groovy(void)
       ds->offAll();
       for(a=0;a<NUMPIXELS;a++)
       {
+        if (checkBoot()) return; //abort if interrupt happened.
         ds->turnOn(a+trail,RED,GREEN,BLUE,31);
         ds->turnOn(NUMPIXELS-a-trail,RED,GREEN,BLUE,31);
         for (b=0;b<c;b++)
@@ -181,6 +281,5 @@ void Sequence::groovy(void)
         loop++;
       }
     }
-  }
 }
 

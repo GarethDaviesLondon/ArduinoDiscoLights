@@ -11,6 +11,8 @@ void initShaftEncoder(int Min,int Max)
   pinMode(shaftOutputA,INPUT_PULLUP);
   pinMode(shaftOutputB,INPUT_PULLUP);
   pinMode(shaftPushSw,INPUT_PULLUP);
+  pinMode(hwResetControl,INPUT_PULLUP);
+  
   shaftBState = digitalRead(shaftOutputB);
   shaftAState = digitalRead(shaftOutputA); // Reads the "current" state of the outputA
   shaftALastState = shaftAState; // Updates the previous state of the outputA with the current state
@@ -79,9 +81,8 @@ void checkShaftCounter()
 
 //This is a reboot function that can be used to reset the unit.
 void shaftReboot() {
-  wdt_disable();
-  wdt_enable(WDTO_15MS);
-  while (1) {}
+  shaftRebootFlag=true;
+  shaftCounter=EEPROM.read(shaftPROPOSEDRUNSTATE);
 }
 
 
@@ -109,10 +110,10 @@ void shaftPushSwitchISR()
 {
   noInterrupts();
   #ifdef DEBUGSHAFTENCODER
-      Serial.println("Button Push Detected");
+      Serial.println("Button Push Detected, 5sec delay");
       delay(500);
    #endif
-   int debounceDelay=350; // This was found by trial and error to be the amount of time needed to debounce the switch
+  int debounceDelay=350; // This was found by trial and error to be the amount of time needed to debounce the switch
   bool state,prevState;
 
   //This is a debounce routine, stops the repeated calls to the interrupt.
@@ -129,8 +130,8 @@ void shaftPushSwitchISR()
   //We now have a stable switch which is not bouncing all over the place
     
   EEPROM.write(shaftPROPOSEDRUNSTATE,shaftCounter); //Write the current value of the shaft encoder into the EEPROM for reboot.
-  //Perform Watchdog Reboot
   shaftReboot();
+  pattern->communicate(shaftCounter);
 }
 
 void shaftRotateISR()
@@ -147,9 +148,9 @@ void shaftRotateISR()
        // If the outputB state is different to the outputA state, that means the encoder is rotating clockwise
        if (shaftBState != shaftAState) 
        { 
-         shaftCounter ++;
-       } else {
          shaftCounter --;
+       } else {
+         shaftCounter ++;
        }
      
      }

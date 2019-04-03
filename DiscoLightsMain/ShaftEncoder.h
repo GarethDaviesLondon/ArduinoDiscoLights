@@ -10,6 +10,7 @@
 #define shaftPushSw 2
 #define shaftOutputA 3
 #define shaftOutputB 4
+#define hwResetControl 5
 
 
 //These are used to address EEPROM memory.
@@ -27,5 +28,6 @@ bool shaftBLastState;
 
 int shaftCounter;
 int sMax,sMin;
+bool shaftRebootFlag=false;
 
 #endif

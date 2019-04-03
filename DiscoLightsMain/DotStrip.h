@@ -25,7 +25,7 @@ class DotStrip
   private:
   
     int clockPin = 6;
-    int dataPin = 5;
+    int dataPin = 7;
     int numPixels = NUMPIXELS;
     int StripBrightness;
     byte LEDARRAY[NUMPIXELS][4];
