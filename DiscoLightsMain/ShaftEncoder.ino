@@ -85,6 +85,9 @@ void shaftReboot() {
   shaftCounter=EEPROM.read(shaftPROPOSEDRUNSTATE);
 }
 
+void shaftLongPress(){
+  shaftLongPressFlag=true;
+}
 
 //This flashes the designated pin (built in LED for example) the number of times recorded by the shaft encoder
 void shaftConfirm(int flashCount)
@@ -110,16 +113,19 @@ void shaftPushSwitchISR()
 {
   noInterrupts();
   #ifdef DEBUGSHAFTENCODER
-      Serial.println("Button Push Detected, 5sec delay");
-      delay(500);
+      Serial.println("Button Push Detected");
    #endif
   int debounceDelay=350; // This was found by trial and error to be the amount of time needed to debounce the switch
+  int longPressDelay=250;
+  
   bool state,prevState;
+
+  int start=micros();
+  int stoptime;
 
   //This is a debounce routine, stops the repeated calls to the interrupt.
   for (int looper=0;looper < debounceDelay;looper++)
   {
-    delay(1);
     state=digitalRead(shaftPushSw);
     if (state != prevState)
     {
@@ -128,10 +134,44 @@ void shaftPushSwitchISR()
     }
   }
   //We now have a stable switch which is not bouncing all over the place
+
+  state=digitalRead(shaftPushSw);
+  prevState=state;
+  
+  while (1)
+  {
+    state=digitalRead(shaftPushSw);
+    if (prevState!=state)
+    {
+      stoptime=micros();
+      break;
+    }
+  }
+
+  #ifdef DEBUGSHAFTENCODER
+  Serial.println(start);
+  Serial.println(stoptime);
+  #endif
+
+  
+  
+  if ((stoptime-start)>=longPressDelay)
+  {
+    #ifdef DEBUGSHAFTENCODER
+    Serial.println("Long Press");
+    #endif
+  }
+  else
+  {
+    #ifdef DEBUGSHAFTENCODER
+    Serial.println("Short Press");
+    #endif
+  
+    EEPROM.write(shaftPROPOSEDRUNSTATE,shaftCounter); //Write the current value of the shaft encoder into the EEPROM for reboot.
+    shaftReboot();
+    pattern->communicate(shaftCounter);
     
-  EEPROM.write(shaftPROPOSEDRUNSTATE,shaftCounter); //Write the current value of the shaft encoder into the EEPROM for reboot.
-  shaftReboot();
-  pattern->communicate(shaftCounter);
+  }
 }
 
 void shaftRotateISR()
@@ -167,7 +207,7 @@ void shaftRotateISR()
      Serial.print (" Now ");
      Serial.print (shaftBState);
      Serial.print(" Position: ");
-     Serial.println(shaftCounter);
+    Serial.println(shaftCounter);
 #endif
 
    shaftALastState = shaftAState; // Updates the previous state of the outputA with the current state

@@ -12,12 +12,16 @@
 #define shaftOutputB 4
 #define hwResetControl 5
 
+#ifndef EEPROMGLOBALS
 
 //These are used to address EEPROM memory.
 #define SIGNATURE 0xAB
 #define shaftCURRENTRUNSTATE 1
 #define shaftPROPOSEDRUNSTATE 2
 #define shaftCONFIRMLED LED_BUILTIN
+
+#endif
+
 
 //These are persistent variables used to assess the rotation of the shaftencoder, and keep a tally of where we are
 
@@ -29,5 +33,6 @@ bool shaftBLastState;
 int shaftCounter;
 int sMax,sMin;
 bool shaftRebootFlag=false;
+bool shaftLongPressFlag=false;
 
 #endif

@@ -21,6 +21,23 @@
 #define SEQUENCEFULLSCALEmid 400
 #define SEQUENCEFULLSCALEbass 350
 
+#define SAMPLEWINDOW 128
+
+#ifndef EEPROMGLOBALS
+
+//These are used to address EEPROM memory.
+//Note that these are integer values therefore require two bytes so EEPROM index jumps in 2s.
+#define CALCONFIRM 3
+#define CALVU1MIN 4
+#define CALVU1AV 6
+#define CALVU1PEAK 8
+#define CALVU2MIN 10
+#define CALVU2AV 22
+#define CALVU2PEAK 14
+#define CALVU3MIN 16
+#define CALVU3AV 18
+#define CALVU3PEAK 20
+#endif
 
 #include "DotStrip.h"
 
@@ -36,6 +53,17 @@ class Sequence
   void strobeColour(int,int);
   void redBuild();
   void communicate(int);
+  void showVolts(void);
+  void calibrate(void);
+  bool isCalibrated(void);
+  void showCalibratedVolts(void);
+  void barGraph(int level,int,int,int);
+  void showBass();
+  void showMid();
+  void showTreble();
+  void showAllChannels();
+  void goDark();
+
 
   
   private:
@@ -49,16 +77,26 @@ class Sequence
   unsigned char mainBLUE=128;
   unsigned char mainGreen=128;
   unsigned char mainBRIGHTNESS=16;
+
+  long vu1Tot,vu2Tot,vu3Tot=0;
+  int vu1Av,vu2Av,vu3Av=0;
+  
   int vu1Peak,vu2Peak,vu3Peak=0;
   int vu1Min,vu2Min,vu3Min=512;
+  int vu1PPMax,vu2PPMax,vu3PPMax=0;
+  int calVU1min,calVU1av,calVU1peak;
+  int calVU2min,calVU2av,calVU2peak;
+  int calVU3min,calVU3av,calVU3peak;
+  
   int SizeRed=0;
   int SizeBlue=0;
   int GlobalBrightness=5; 
   bool Update = false;
-  int debugCounter=0;
-  
-
-
+  void sample(unsigned int);
+  void printVoltage(int,int,int,int);
+  void loadCalibrations(void);
+  void Sequence::writeEPint(int addr, int inp);
+  int Sequence::readEPint(int addr);
   bool checkBoot(void);
   DotStrip *ds;
   unsigned char RED,GREEN,BLUE;
