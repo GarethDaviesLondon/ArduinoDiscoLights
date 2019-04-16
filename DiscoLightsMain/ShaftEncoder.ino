@@ -115,13 +115,13 @@ void shaftPushSwitchISR()
   #ifdef DEBUGSHAFTENCODER
       Serial.println("Button Push Detected");
    #endif
-  int debounceDelay=350; // This was found by trial and error to be the amount of time needed to debounce the switch
-  int longPressDelay=250;
+  int debounceDelay=DEBOUNCEDELAY; // This was found by trial and error to be the amount of time needed to debounce the switch
+  int longPressDelay=LONGPRESSDELAY;
   
   bool state,prevState;
 
   int start=micros();
-  int stoptime;
+  int stoptime=start;
 
   //This is a debounce routine, stops the repeated calls to the interrupt.
   for (int looper=0;looper < debounceDelay;looper++)
@@ -154,17 +154,23 @@ void shaftPushSwitchISR()
   #endif
 
   
-  
   if ((stoptime-start)>=longPressDelay)
   {
     #ifdef DEBUGSHAFTENCODER
-    Serial.println("Long Press");
+    Serial.print("Long Press Delay : Threshold ");
+    Serial.print(stoptime-start);
+    Serial.print("::");
+    Serial.println(longPressDelay);
     #endif
+    shaftLongPress();
   }
   else
   {
     #ifdef DEBUGSHAFTENCODER
-    Serial.println("Short Press");
+    Serial.println("Short Press Delay : Threshold ");
+    Serial.print(stoptime-start);
+    Serial.print("::");
+    Serial.println(longPressDelay);
     #endif
   
     EEPROM.write(shaftPROPOSEDRUNSTATE,shaftCounter); //Write the current value of the shaft encoder into the EEPROM for reboot.

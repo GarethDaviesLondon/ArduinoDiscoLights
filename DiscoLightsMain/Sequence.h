@@ -21,7 +21,7 @@
 #define SEQUENCEFULLSCALEmid 400
 #define SEQUENCEFULLSCALEbass 350
 
-#define SAMPLEWINDOW 128
+#define SAMPLEWINDOW 64
 
 #ifndef EEPROMGLOBALS
 
@@ -64,7 +64,7 @@ class Sequence
   void showAllChannels();
   void goDark();
 
-
+  
   
   private:
   
@@ -78,12 +78,10 @@ class Sequence
   unsigned char mainGreen=128;
   unsigned char mainBRIGHTNESS=16;
 
-  long vu1Tot,vu2Tot,vu3Tot=0;
-  int vu1Av,vu2Av,vu3Av=0;
-  
+
+  int vu1Av,vu2Av,vu3Av=0;  
   int vu1Peak,vu2Peak,vu3Peak=0;
-  int vu1Min,vu2Min,vu3Min=512;
-  int vu1PPMax,vu2PPMax,vu3PPMax=0;
+  int vu1Min,vu2Min,vu3Min=1024;
   int calVU1min,calVU1av,calVU1peak;
   int calVU2min,calVU2av,calVU2peak;
   int calVU3min,calVU3av,calVU3peak;
@@ -93,8 +91,10 @@ class Sequence
   int GlobalBrightness=5; 
   bool Update = false;
   void sample(unsigned int);
-  void printVoltage(int,int,int,int);
+  void calibrationSample();
+  void printVoltage(int,int,int);
   void loadCalibrations(void);
+  
   void Sequence::writeEPint(int addr, int inp);
   int Sequence::readEPint(int addr);
   bool checkBoot(void);

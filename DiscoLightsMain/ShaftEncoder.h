@@ -11,6 +11,8 @@
 #define shaftOutputA 3
 #define shaftOutputB 4
 #define hwResetControl 5
+#define DEBOUNCEDELAY 350; // This was found by trial and error to be the amount of time needed to debounce the switch
+#define LONGPRESSDELAY 750; //Time in microseconds for a long press to be registered.
 
 #ifndef EEPROMGLOBALS
 
@@ -19,6 +21,7 @@
 #define shaftCURRENTRUNSTATE 1
 #define shaftPROPOSEDRUNSTATE 2
 #define shaftCONFIRMLED LED_BUILTIN
+
 
 #endif
 
