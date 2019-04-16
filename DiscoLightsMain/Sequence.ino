@@ -2,7 +2,8 @@
 #include "ShaftEncoder.h"
 
 //#define SEQUENCEDEUG
-#define SEQUENCEDEUGSAMPLE
+//#define SEQUENCEDEUGSAMPLE
+//#define SEQUENCEDEBUGCALIBRATE
 
 Sequence::Sequence (DotStrip *dotin)
 {
@@ -14,7 +15,7 @@ Sequence::Sequence (DotStrip *dotin)
   ds->setGlobalBrightness(GlobalBrightness);
   ds->offAll();
   ds->show();
-  //loadCalibrations();
+  loadCalibrations();
 }
 
 /*
@@ -24,15 +25,71 @@ Sequence::Sequence (DotStrip *dotin)
  * this makes it very slow, so only use when debugging!
  */
 
-void Sequence::sample(unsigned int junkit)
+//Grabs a sample of data and calculates the peak value experienced in the window, this is used as the vu1,vu2,vu3 measurements of current sample.
+
+void Sequence::sample()
 {
-  return NULL;
+    int sampleset = SAMPLEWINDOW;
+    int starttime,stoptime,endtime;
+    int pinSequence[3];
+    pinSequence[0]=TrebleAnalogPin;
+    pinSequence[1]=BassAnalogPin;
+    pinSequence[2]=MidAnalogPin;
+
+    int vuSample;
+    vu1Sam=vu2Sam=vu3Sam=0;
+
+
+      #ifdef SEQUENCEDEUGSAMPLE
+      Serial.println("Sampling Now");
+      Serial.print(" Sample Window Size per channel: ");
+      Serial.println(sampleset);
+      starttime=millis();
+      Serial.print("Starttime ");
+      Serial.println(starttime);
+      #endif 
+
+    //Loop taking a sample and then doing a peak-detection.  
+    for (int a = 0; a < sampleset; a++)
+    {
+              vuSample = analogRead(TrebleAnalogPin);
+              if (vuSample>vu1Sam) vu1Sam=vuSample;
+              vuSample = analogRead(BassAnalogPin);
+              if (vuSample>vu2Sam) vu2Sam=vuSample;
+              vuSample = analogRead(MidAnalogPin);
+              if (vuSample>vu3Sam) vu3Sam=vuSample;;
+    }
+
+      #ifdef SEQUENCEDEUGSAMPLE
+        stoptime=millis();
+        Serial.print("Sampling stoptime ");
+        Serial.println(stoptime);
+        int elapsedMillis=stoptime-starttime;
+        Serial.print("Elapsed Sampling Time ");
+        Serial.println(elapsedMillis);
+        float millisPerSample=((float) elapsedMillis/(float) sampleset)*3; // 3x because there are three channels sampling.
+        Serial.print("Milli Seconds Per Sample ");
+        Serial.println(millisPerSample);
+        float sampFreq=1000/millisPerSample;
+        Serial.print("Sampling Frequency (Hz)");
+        Serial.println(sampFreq);
+        Serial.print("Channel Samples 1,2,3 ");
+        Serial.print(vu1Sam);
+        Serial.print(", ");
+        Serial.print(vu2Sam);
+        Serial.print(", ");
+        Serial.print(vu3Sam);
+        Serial.println();
+      #endif 
 }
+      
+//Routine for capturing a calibration sample and calculating mean and std deviation.
+//Sets the limits for light triggering based on 2 StdDev from mean as vu[1,2,3]Min and Vu[1,2,3]Peak
 
 void Sequence::calibrationSample()
 {
 
-    int sampleset = SAMPLEWINDOW;
+    int sampleset = CALIBRATIONWINDOW;
     int starttime,stoptime,endtime;
     int pinSequence[3];
     pinSequence[0]=TrebleAnalogPin;
@@ -43,7 +100,7 @@ void Sequence::calibrationSample()
 
     for (int inputPin=0;inputPin<3;inputPin++)
     {
-      #ifdef SEQUENCEDEUGSAMPLE
+      #ifdef SEQUENCEDEBUGCALIBRATE
       Serial.println("Sampling Now");
       Serial.print("Channel ");
       Serial.print(inputPin);
@@ -59,14 +116,14 @@ void Sequence::calibrationSample()
               vuSamples[a] = analogRead(pinSequence[inputPin]);
           }
       
-      #ifdef SEQUENCEDEUGSAMPLE
+      #ifdef SEQUENCEDEBUGCALIBRATE
         stoptime=millis();
         Serial.print("Sampling stoptime ");
         Serial.println(stoptime);
         int elapsedMillis=stoptime-starttime;
         Serial.print("Elapsed Sampling Time ");
         Serial.println(elapsedMillis);
-        float millisPerSample=((float) elapsedMillis/(float) sampleset)*3;
+        float millisPerSample=((float) elapsedMillis/(float) sampleset);
         Serial.print("Milli Seconds Per Sample ");
         Serial.println(millisPerSample);
         float sampFreq=1000/millisPerSample;
@@ -100,9 +157,10 @@ void Sequence::calibrationSample()
           
           vuSD=vuSD/sampleset;
           vuSD=sqrt(vuSD);
-          int vuSDInt=(int)vuSD;
+          int vuSDInt=(int)vuSD;      //It rounds down the SD to an integer, faster and less storage requirements.
+          if (vuSDInt<10) vuSDInt=10; //This provides some beat behaviour even if calibrated in silence, otherwise it's always on!
       
-      #ifdef SEQUENCEDEUGSAMPLE
+      #ifdef SEQUENCEDEBUGCALIBRATE
         endtime=millis();
         Serial.print("Processing stoptime ");
         Serial.print(endtime);
@@ -126,14 +184,17 @@ void Sequence::calibrationSample()
         case 0:
             if (vuAv+(2*vuSDInt) < vuPeak) { vu1Peak=vuAv+(2*vuSDInt); } else { vu1Peak=vuPeak;}
             if (vuAv-(2*vuSDInt) > vuMin) { vu1Min=vuAv-(2*vuSDInt); } else { vu1Min=vuMin;}
+            vu1Av=vuAv;
             break;
         case 1:
             if (vuAv+(2*vuSDInt) < vuPeak) { vu2Peak=vuAv+(2*vuSDInt); } else { vu2Peak=vuPeak;}
             if (vuAv-(2*vuSDInt) > vuMin) { vu2Min=vuAv-(2*vuSDInt); } else { vu2Min=vuMin;}
+            vu2Av=vuAv;
             break;
         case 2:
             if (vuAv+(2*vuSDInt) < vuPeak) { vu3Peak=vuAv+(2*vuSDInt); } else { vu3Peak=vuPeak;}
             if (vuAv-(2*vuSDInt) > vuMin) { vu3Min=vuAv-(2*vuSDInt); } else { vu3Min=vuMin;}
+            vu3Av=vuAv;
             break;
       }
    }
@@ -142,7 +203,6 @@ void Sequence::calibrationSample()
 /*
  * This is the calibration section which setsup the defauls in the memory of the device. 
  */
-
 
 bool Sequence::isCalibrated(void)
 {
@@ -193,8 +253,8 @@ void Sequence::writeEPint(int addr, int inp)
 {
   byte LSB=inp;
   byte MSB=inp>>8;
-  //EEPROM.update(addr,LSB);
-  //EEPROM.update(addr+1,MSB);
+  EEPROM.update(addr,LSB);
+  EEPROM.update(addr+1,MSB);
 }
 
 int Sequence::readEPint(int addr)
@@ -211,31 +271,29 @@ void Sequence::loadCalibrations(void)
 {
 
   if (isCalibrated() ==true){
-    calVU1min = readEPint( CALVU1MIN);
-    calVU1av = readEPint( CALVU1AV);
-    calVU1peak = readEPint( CALVU1PEAK);
-    calVU2min= readEPint( CALVU2MIN);
-    calVU2av = readEPint( CALVU2AV);
-    calVU2peak = readEPint( CALVU2PEAK);
-    calVU3min = readEPint( CALVU3MIN);
-    calVU3av = readEPint( CALVU3AV);
-    calVU3peak = readEPint( CALVU3PEAK);
+    vu1Min = readEPint( CALVU1MIN);
+    vu1Av = readEPint( CALVU1AV);
+    vu1Peak = readEPint( CALVU1PEAK);
+    vu2Min = readEPint( CALVU2MIN);
+    vu2Av = readEPint( CALVU2AV);
+    vu2Peak = readEPint( CALVU2PEAK);
+    vu3Min = readEPint( CALVU3MIN);
+    vu3Av = readEPint( CALVU3AV);
+    vu3Peak = readEPint( CALVU3PEAK);
   } else {
-    calVU1min=calVU2min=calVU3min=0;
-    calVU1peak=calVU2peak=calVU3peak=512;
-    calVU1av=calVU2av=calVU3av=255;
+    vu1Min=vu1Min=vu1Min=0;
+    vu1Av=vu2Av=vu3Av=255;
+    vu1Peak=vu2Peak=vu3Peak=512;
   }
 
   #ifdef SEQUENCEDEUG
   Serial.println("Calibration loadeded following values");
   Serial.print("BASS ");
-  printVoltage(calVU2peak,calVU2av,calVU2min);
-    Serial.print(" :BASE AV= ");
-  Serial.print(calVU2av,HEX);
+  printVoltage(vu2Peak,vu2Av,vu2Min);
   Serial.print(" MID ");
-  printVoltage(calVU3peak,calVU3av,calVU3min);
+  printVoltage(vu3Peak,vu3Av,vu3Min);
   Serial.print(" TREB ");
-  printVoltage(calVU1peak,calVU1av,calVU1min);
+  printVoltage(vu1Peak,vu1Av,vu1Min);
   Serial.print("\n");
 #endif
 }
@@ -248,18 +306,19 @@ void Sequence::loadCalibrations(void)
 void Sequence::goDark()
 {
   ds->offAll();
+  ds->show();
 }
 
 void Sequence::showBass()
 {
-  sample(0);
-  int vu=map(vu2Av,calVU2min,calVU2peak,0,NUMPIXELS);
+  sample();
+  int vu=map(vu2Sam,vu2Min,vu2Peak,0,NUMPIXELS);
   barGraph(vu,255,0,0);
 #ifdef SEQUENCEDEUG
   Serial.print("Base : Sample ");
-  printVoltage(vu2Peak,vu2Av,vu2Min);
+  Serial.print(vu2Sam);
   Serial.print(" ++  : Calibration ");
-  printVoltage(calVU2peak,calVU2av,calVU2min);
+  printVoltage(vu2Peak,vu2Av,vu2Min);
   Serial.print(" Scale Max ");
   Serial.print(NUMPIXELS);
   Serial.print(" Scale Result ");
@@ -269,14 +328,14 @@ void Sequence::showBass()
 
 void Sequence::showMid()
 {
-  sample(0);
-  int vu=map(vu3Av,calVU3min,calVU3peak,0,NUMPIXELS);
+  sample();
+  int vu=map(vu3Sam,vu3Min,vu3Peak,0,NUMPIXELS);
   barGraph(vu,0,255,0);
 #ifdef SEQUENCEDEUG
-  Serial.print("Mid : Sample ");
+  Serial.print("Base : Sample ");
+  Serial.print(vu3Sam);
+  Serial.print(" ++  : Calibration ");
   printVoltage(vu3Peak,vu3Av,vu3Min);
-  Serial.print("++  : Calibration ");
-  printVoltage(calVU3peak,calVU3av,calVU3min);
   Serial.print(" Scale Max ");
   Serial.print(NUMPIXELS);
   Serial.print(" Scale Result ");
@@ -286,14 +345,14 @@ void Sequence::showMid()
 
 void Sequence::showTreble()
 {
-  sample(0);
-  int vu=map(vu1Av,calVU1min,calVU1peak,0,NUMPIXELS);
+  sample();
+  int vu=map(vu1Sam,vu1Min,vu1Peak,0,NUMPIXELS);
   barGraph(vu,0,0,255);
 #ifdef SEQUENCEDEUG
-  Serial.print("Treble : Sample ");
-  printVoltage(vu1Peak,vu1Av,vu3Min);
-  Serial.print(" ++ Calibration ");
-  printVoltage(calVU1peak,calVU1av,calVU1min);
+  Serial.print("Base : Sample ");
+  Serial.print(vu1Sam);
+  Serial.print(" ++  : Calibration ");
+  printVoltage(vu1Peak,vu1Av,vu1Min);
   Serial.print(" Scale Max ");
   Serial.print(NUMPIXELS);
   Serial.print(" Scale Result ");
@@ -558,10 +617,10 @@ void Sequence::barGraph(int level,int red, int green, int blue)
 void Sequence::showAllChannels()
 {
   ds->offAll();
-  sample(0);
-  int vu1=map(vu1Av,calVU2min,calVU2peak,0,NUMPIXELS);
-  int vu2=map(vu2Av,calVU2min,calVU2peak,0,NUMPIXELS);
-  int vu3=map(vu3Av,calVU2min,calVU2peak,0,NUMPIXELS);
+  sample();
+  int vu1=map(vu1Sam,vu1Min,vu1Peak,0,NUMPIXELS);
+  int vu2=map(vu2Sam,vu2Min,vu2Peak,0,NUMPIXELS);
+  int vu3=map(vu3Sam,vu2Min,vu2Peak,0,NUMPIXELS);
  
   for (int a=0;a<=NUMPIXELS;a++)
   {
@@ -605,6 +664,8 @@ void Sequence::printVoltage(int maxV, int avV, int minV)
 
 void Sequence::showCalibratedVolts()
 {
+  /*
+   * 
   showVolts();
   int vu1=map(vu1Av,calVU1min,calVU1peak,0,10);
   int vu2=map(vu2Av,calVU2min,calVU2peak,0,10);
@@ -616,11 +677,12 @@ void Sequence::showCalibratedVolts()
   Serial.print(" TREB ");
   Serial.print(vu1);
   Serial.print("\n");
+  */
 }
 
 void Sequence::showVolts(void)
 {
-  sample(0);
+  sample();
   Serial.print("BASS ");
   printVoltage(vu2Peak,vu2Av,vu2Min);
   Serial.print(" MID ");

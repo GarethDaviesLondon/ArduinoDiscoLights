@@ -2,8 +2,7 @@
 #include "DotStrip.h"
 #include "ShaftEncoder.h"
 #include "Sequence.h";
-
-#define DEBUGMAIN
+#include "DiscoLights.h"
 
 DotStrip *ds;
 Sequence *pattern;
@@ -39,10 +38,17 @@ if (shaftLongPressFlag == true )
 #ifdef DEBUGMAIN
 Serial.println("Initiating calibration sequence");
 #endif
-
   pattern->calibrate();
-  
+#ifdef DEBUGMAIN
+Serial.println("Calibration Complete");
+#endif
   }
+
+  
+#ifdef DEBUGMAIN
+static int lastShaft = -1;
+#endif
+
   
   switch (shaftCounter)
   {
@@ -63,18 +69,39 @@ Serial.println("Initiating calibration sequence");
         break;
         */
     case 0:
+     #ifdef DEBUGMAIN
+        if (shaftCounter!= lastShaft) Serial.println("Going Dark");
+        lastShaft=shaftCounter;
+      #endif
         pattern->goDark();
+
     break;    
     case 1:
+        #ifdef DEBUGMAIN
+            if (shaftCounter!= lastShaft) Serial.println("Showing Bass");
+            lastShaft=shaftCounter;
+        #endif
         pattern->showBass();
         break;
     case 2:
+        #ifdef DEBUGMAIN
+            if (shaftCounter!= lastShaft) Serial.println("Showing Mid Range");
+            lastShaft=shaftCounter;
+        #endif
         pattern->showMid();
         break;
     case 3:
+        #ifdef DEBUGMAIN
+            if (shaftCounter!= lastShaft) Serial.println("Showing Treble");
+            lastShaft=shaftCounter;
+        #endif
         pattern->showTreble();
         break;
     case 4:
+         #ifdef DEBUGMAIN
+            if (shaftCounter!= lastShaft) Serial.println("Showing MidRange");
+            lastShaft=shaftCounter;
+        #endif
         pattern->showAllChannels();
         break;
 

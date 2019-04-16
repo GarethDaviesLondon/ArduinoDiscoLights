@@ -22,6 +22,7 @@
 #define SEQUENCEFULLSCALEbass 350
 
 #define SAMPLEWINDOW 64
+#define CALIBRATIONWINDOW 128
 
 #ifndef EEPROMGLOBALS
 
@@ -67,39 +68,34 @@ class Sequence
   
   
   private:
-  
+
+  bool checkBoot(void);
+  DotStrip *ds;
   int TrebleAnalogPin = A3;
   int BassAnalogPin = A2;
   int MidAnalogPin = A1;
-  
   int intensity = 30;
   unsigned char mainRED=128;
   unsigned char mainBLUE=128;
   unsigned char mainGreen=128;
   unsigned char mainBRIGHTNESS=16;
-
-
+  unsigned char RED,GREEN,BLUE;
   int vu1Av,vu2Av,vu3Av=0;  
   int vu1Peak,vu2Peak,vu3Peak=0;
   int vu1Min,vu2Min,vu3Min=1024;
-  int calVU1min,calVU1av,calVU1peak;
-  int calVU2min,calVU2av,calVU2peak;
-  int calVU3min,calVU3av,calVU3peak;
-  
+  int vu1Sam,vu2Sam,vu3Sam=0;
   int SizeRed=0;
   int SizeBlue=0;
   int GlobalBrightness=5; 
   bool Update = false;
-  void sample(unsigned int);
+  
+  void sample();
   void calibrationSample();
   void printVoltage(int,int,int);
   void loadCalibrations(void);
-  
-  void Sequence::writeEPint(int addr, int inp);
-  int Sequence::readEPint(int addr);
-  bool checkBoot(void);
-  DotStrip *ds;
-  unsigned char RED,GREEN,BLUE;
+  void writeEPint(int addr, int inp);
+  int readEPint(int addr);
+
 };
 
 #endif

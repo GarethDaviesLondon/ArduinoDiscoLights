@@ -1,6 +1,7 @@
+#define DEBUGMAIN
+
 #ifndef EEPROMGLOBALS
 #define EEPROMGLOBALS
-
 #define SIGNATURE 0xAB // This is to see if it's a virgin board or not.
 
 //These are used to address EEPROM memory.
@@ -22,3 +23,4 @@
 #define CALVU3PEAK 20
 
 #endif
+

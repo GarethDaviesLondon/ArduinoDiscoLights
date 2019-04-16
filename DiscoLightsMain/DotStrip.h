@@ -35,6 +35,7 @@ class DotStrip
     void startTX();
     void endTX();
     void testPins();
+
 };
 
 #endif

@@ -71,11 +71,15 @@ void checkShaftCounter()
   //Incase that we have end-stopped.
   if (shaftCounter<sMin) {
     shaftCounter=sMin;
+    #ifdef DEBUGSHAFTENCODER
     Serial.println("reset counter to min");
+    #endif
   }
   if (shaftCounter>sMax){
     shaftCounter=sMax;
+    #ifdef DEBUGSHAFTENCODER
     Serial.println("reset counter to max");
+    #endif
   }
 }
 
@@ -89,6 +93,29 @@ void shaftLongPress(){
   shaftLongPressFlag=true;
 }
 
+float wasteTime(long int d)
+{
+    d=d*100000000;
+#ifdef DEBUGSHAFTENCODER
+      Serial.println(micros());
+      Serial.print("Starting to waste time ");
+      Serial.println(d);
+ #endif
+  double a=3.14;
+  for (int l=0;l<d;l++)
+  {
+    double b=sqrt(a);
+    a+=b;
+    a=sq(a);
+    a=a-1;
+    a=sqrt(a);
+  }
+ #ifdef DEBUGSHAFTENCODER
+      Serial.println(micros());
+      Serial.println("done");
+ #endif
+}
+
 //This flashes the designated pin (built in LED for example) the number of times recorded by the shaft encoder
 void shaftConfirm(int flashCount)
 {
@@ -96,13 +123,53 @@ void shaftConfirm(int flashCount)
       Serial.print("Flashing the Light ");
       Serial.println(flashCount);
  #endif
+  unsigned long timerRecord,timerNow;
+  float rubbish;
   for (int a = 0;  a<=flashCount; a++)
   {
-    digitalWrite(LED_BUILTIN,HIGH);
-    delay(500);
-    digitalWrite(LED_BUILTIN,LOW);
-    delay(250);
+    digitalWrite(COMMLED,HIGH);
+    rubbish = wasteTime(50);
+    
+ /*    This code just fails, no idea what is going  on with the micros() function!
+     timerRecord=timerNow=micros();
+ #ifdef DEBUGSHAFTENCODER
+      Serial.print("Light On starting Wait at: ");
+      Serial.println(timerRecord);
+ #endif
+    while(timerNow < timerRecord+500) {
+      timerNow=micros();
+#ifdef DEBUGSHAFTENCODER
+      Serial.print("Still Waiting at : ");
+      Serial.print(timerNow);
+      Serial.print("Waiting to exceed ");
+      Serial.println(timerRecord+500);
+ #endif
+     }//Delay funtion, the delay and millis don't work during interrupts
+     */
+     
+    digitalWrite(COMMLED,LOW);
+    rubbish = wasteTime(50);
+    
+  /* This micros timer code just doesn't work!
+    timerRecord=timerNow=micros();
+ #ifdef DEBUGSHAFTENCODER
+      Serial.print("Light Off starting Wait at: ");
+      Serial.println(timerRecord);
+ #endif
+    while(timerNow < timerRecord+500) {
+      timerNow=micros();
+#ifdef DEBUGSHAFTENCODER
+      Serial.print("Still Waiting at : ");
+      Serial.print(timerNow);
+      Serial.print("Waiting to exceed ");
+      Serial.println(timerRecord+500);
+ #endif
+     }//Delay funtion, the delay and millis don't work during interrupts
+ */
+
+ 
   }
+  if (rubbish>0) return NULL;
 #ifdef DEBUGSHAFTENCODER
       Serial.println("Finished Flashing");
 #endif
@@ -198,10 +265,10 @@ void shaftRotateISR()
        } else {
          shaftCounter ++;
        }
-     
      }
    }
    checkShaftCounter();
+   shaftConfirm(shaftCounter);
         
 #ifdef DEBUGSHAFTENCODER
      Serial.print ("A Postition Last ");

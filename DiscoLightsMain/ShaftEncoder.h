@@ -1,10 +1,11 @@
 #ifndef ENCODERH
 #define ENCODERH
+#define DEBUGSHAFTENCODER
 
 #include <EEPROM.h> //Library needed to read and write from the EEPROM
 #include <avr/wdt.h> //Library needed to use the watchdog timer - which is used in the reboot method
 
-#define DEBUGSHAFTENCODER
+
 
 //These are the digital pins that the shaft encoder will be connected to.
 #define shaftPushSw 2
