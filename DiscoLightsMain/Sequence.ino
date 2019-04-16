@@ -18,6 +18,13 @@ Sequence::Sequence (DotStrip *dotin)
   loadCalibrations();
 }
 
+//Some methods for controlling flow
+bool Sequence::checkBoot(void)
+{
+  return shaftRebootFlag;
+}
+
+
 /*
  * This is the main sample capture routine.
  * During calibration it averages a larger number of samples
@@ -59,6 +66,10 @@ void Sequence::sample()
               vuSample = analogRead(MidAnalogPin);
               if (vuSample>vu3Sam) vu3Sam=vuSample;;
     }
+
+      vu1Scale=map(vu1Sam,vu1Min,vu1Peak,0,NUMPIXELS);
+      vu2Scale=map(vu2Sam,vu2Min,vu2Peak,0,NUMPIXELS);
+      vu3Scale=map(vu3Sam,vu3Min,vu3Peak,0,NUMPIXELS);
 
       #ifdef SEQUENCEDEUGSAMPLE
         stoptime=millis();
@@ -312,8 +323,7 @@ void Sequence::goDark()
 void Sequence::showBass()
 {
   sample();
-  int vu=map(vu2Sam,vu2Min,vu2Peak,0,NUMPIXELS);
-  barGraph(vu,255,0,0);
+  barGraph(vu2Scale,255,0,0);
 #ifdef SEQUENCEDEUG
   Serial.print("Base : Sample ");
   Serial.print(vu2Sam);
@@ -329,8 +339,7 @@ void Sequence::showBass()
 void Sequence::showMid()
 {
   sample();
-  int vu=map(vu3Sam,vu3Min,vu3Peak,0,NUMPIXELS);
-  barGraph(vu,0,255,0);
+  barGraph(vu3Scale,0,255,0);
 #ifdef SEQUENCEDEUG
   Serial.print("Base : Sample ");
   Serial.print(vu3Sam);
@@ -346,8 +355,7 @@ void Sequence::showMid()
 void Sequence::showTreble()
 {
   sample();
-  int vu=map(vu1Sam,vu1Min,vu1Peak,0,NUMPIXELS);
-  barGraph(vu,0,0,255);
+  barGraph(vu1Scale,0,0,255);
 #ifdef SEQUENCEDEUG
   Serial.print("Base : Sample ");
   Serial.print(vu1Sam);
@@ -361,11 +369,49 @@ void Sequence::showTreble()
   
 }
 
+void Sequence::communicate(int mode)
+{
+  Serial.print("Selected Mode : ");
+  Serial.println(mode);
+  if (mode<=0)
+  {
+    //strobeColour(0,2);
+    for (int a=0;a<20;a++){
+      digitalWrite(COMMLED,HIGH);
+      delay(5000);
+      digitalWrite(COMMLED,LOW);
+      delay(5000);
+    }
+  }
+  else
+  {
+    for (int a=0;a<mode;a++){
+      //strobeWhite(2);
+      digitalWrite(COMMLED,HIGH);
+      delay(10000);
+      digitalWrite(COMMLED,LOW);
+      delay(20000);
+    }
+  }
+  delay(1000);
+}
+
 ////// END SIMPLE EXERCISES
 
 
+//Fixed Pattern Sequences here
 
 
+void Sequence::barGraph(int level,int red, int green, int blue)
+{
+
+  ds->offAll();
+  for (int a=0;a<=level;a++)
+  {
+    ds->turnOn(a,red,green,blue,31);
+  }
+  ds->show();
+}
 
 void Sequence::strobeWhite(int loops)
 {
@@ -441,38 +487,6 @@ void Sequence::redBuild(void)
     } //Wizloop
 }
 
-bool Sequence::checkBoot(void)
-{
-  return shaftRebootFlag;
-}
-
-
-void Sequence::communicate(int mode)
-{
-  Serial.print("Selected Mode : ");
-  Serial.println(mode);
-  if (mode<=0)
-  {
-    //strobeColour(0,2);
-    for (int a=0;a<20;a++){
-      digitalWrite(COMMLED,HIGH);
-      delay(5000);
-      digitalWrite(COMMLED,LOW);
-      delay(5000);
-    }
-  }
-  else
-  {
-    for (int a=0;a<mode;a++){
-      //strobeWhite(2);
-      digitalWrite(COMMLED,HIGH);
-      delay(10000);
-      digitalWrite(COMMLED,LOW);
-      delay(20000);
-    }
-  }
-  delay(1000);
-}
 
 void Sequence::superFlash(void)
 {  
@@ -491,82 +505,14 @@ void Sequence::superFlash(void)
      if (checkBoot()) return; //abort if interrupt happened.
 }
 
+
+//Multi Channel Effects
+
+
 void Sequence::boogie(void)
 {
-    int vu1 = analogRead(TrebleAnalogPin);
-    int vu2 = analogRead(BassAnalogPin);
-    int vu3 = analogRead(MidAnalogPin);
-    bool bassGate,midGate,topGate=false;
-    if (vu1Peak<vu1) vu1Peak=vu1;
-    if (vu2Peak<vu2) vu2Peak=vu2;
-    if (vu3Peak<vu3) vu3Peak=vu3;
-    if (vu1Min>vu1) vu1Min=vu1;
-    if (vu2Min>vu2) vu2Min=vu2;
-    if (vu3Min>vu3) vu3Min=vu3;
-
-if (vu1<SEQUENCEGATEtop)
-{
-    topGate=true;
+    sample();
 }
-if (vu2<SEQUENCEGATEbass)
-{
-  bassGate=true;
-}
-if (vu3<SEQUENCEGATEmid)
-{
-  midGate=true;
-}
-
-/*
-if ( (midGate + bassGate + topGate) > 0) 
-{
-  #ifdef SEQUENCEDEUG
-  Serial.println("Gated return");
-  #endif
-  return;
-}
-*/
-
-
-    
-    int scale1 = vu1*ENDSCALER;
-    int scale2 = vu2*MIDSCALER;
-    int mid1 = (NUMPIXELS/2) + scale2 -(MIDSCALER*2);
-    int mid2 = (NUMPIXELS/2) - scale2 +(MIDSCALER*2);
-    int topscale = NUMPIXELS - scale2;
-    int a;
-  
-    intensity = BASEINTENSITY+(scale1*2);
-    
-    for ( a=0;a<scale1;a++) {
-      ds->turnGreen(a,intensity);
-      ds->turnGreen(NUMPIXELS-a,scale1*10);
-    }
-  
-    intensity=BASEINTENSITY+(scale2*10);
-    for (a=0;a<scale2;a++)
-    {
-      ds->turnRed(mid1+a,intensity);
-      ds->turnRed(mid2-a,intensity);
-    }
-  
-    
-    intensity = scale1 * scale2;
-    
-    for (a=0;a<NUMPIXELS;a++)
-    {
-      ds->turnBlue(a,intensity);
-    }
-    
-    ds->setGlobalBrightness(INTESITYSCALER*vu3);
-    ds->show();
-    delay(20);
-    ds->offAll();
-    ds->show();
-}
-
-
-
 
 void Sequence::groovy(void)
 {
@@ -603,16 +549,6 @@ void Sequence::groovy(void)
     }
 }
 
-void Sequence::barGraph(int level,int red, int green, int blue)
-{
-
-  ds->offAll();
-  for (int a=0;a<=level;a++)
-  {
-    ds->turnOn(a,red,green,blue,31);
-  }
-  ds->show();
-}
 
 void Sequence::showAllChannels()
 {
@@ -633,65 +569,5 @@ void Sequence::showAllChannels()
   }
   ds->show();
 }
-
-
-
-/* 
- *  Test Routines that are used to show and calibrate the analogue signals to enable in-time with the music displays to build.
- */
-
-
-void Sequence::printVoltage(int maxV, int avV, int minV)
-{
-  if (maxV<10) Serial.print("0");
-  if (maxV<100) Serial.print("0");
-  Serial.print(maxV);
-  Serial.print(" : ");
-  if (avV<10) Serial.print("0");
-  if (avV<100) Serial.print("0");
-  Serial.print(avV);
-  Serial.print(" : ");
-  if (minV<10) Serial.print("0");
-  if (minV<100) Serial.print("0");
-  Serial.print(minV);
-  Serial.print(" : ");
-  int PP=maxV-minV;
-  
-  Serial.print(" PP=");
-  Serial.print(PP);
-
-}
-
-void Sequence::showCalibratedVolts()
-{
-  /*
-   * 
-  showVolts();
-  int vu1=map(vu1Av,calVU1min,calVU1peak,0,10);
-  int vu2=map(vu2Av,calVU2min,calVU2peak,0,10);
-  int vu3=map(vu3Av,calVU3min,calVU3peak,0,10);
-  Serial.print("BASS ");
-  Serial.print(vu1);
-  Serial.print(" MID ");
-  Serial.print(vu3);
-  Serial.print(" TREB ");
-  Serial.print(vu1);
-  Serial.print("\n");
-  */
-}
-
-void Sequence::showVolts(void)
-{
-  sample();
-  Serial.print("BASS ");
-  printVoltage(vu2Peak,vu2Av,vu2Min);
-  Serial.print(" MID ");
-  printVoltage(vu3Peak,vu3Av,vu3Min);
-  Serial.print(" TREB ");
-  printVoltage(vu1Peak,vu1Av,vu1Min);
-  Serial.print("\n");
-}
-
-
 
 

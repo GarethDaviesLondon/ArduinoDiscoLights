@@ -54,10 +54,8 @@ class Sequence
   void strobeColour(int,int);
   void redBuild();
   void communicate(int);
-  void showVolts(void);
   void calibrate(void);
   bool isCalibrated(void);
-  void showCalibratedVolts(void);
   void barGraph(int level,int,int,int);
   void showBass();
   void showMid();
@@ -84,6 +82,7 @@ class Sequence
   int vu1Peak,vu2Peak,vu3Peak=0;
   int vu1Min,vu2Min,vu3Min=1024;
   int vu1Sam,vu2Sam,vu3Sam=0;
+  int vu1Scale,vu2Scale,vu3Scale;
   int SizeRed=0;
   int SizeBlue=0;
   int GlobalBrightness=5; 
@@ -91,7 +90,6 @@ class Sequence
   
   void sample();
   void calibrationSample();
-  void printVoltage(int,int,int);
   void loadCalibrations(void);
   void writeEPint(int addr, int inp);
   int readEPint(int addr);

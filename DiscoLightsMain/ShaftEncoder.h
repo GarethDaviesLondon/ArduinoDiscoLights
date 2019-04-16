@@ -1,6 +1,6 @@
 #ifndef ENCODERH
 #define ENCODERH
-#define DEBUGSHAFTENCODER
+//#define DEBUGSHAFTENCODER
 
 #include <EEPROM.h> //Library needed to read and write from the EEPROM
 #include <avr/wdt.h> //Library needed to use the watchdog timer - which is used in the reboot method

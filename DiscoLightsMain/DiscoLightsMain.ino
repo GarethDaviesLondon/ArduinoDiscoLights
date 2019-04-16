@@ -9,7 +9,7 @@ Sequence *pattern;
 
 void setup() {
   
-    initShaftEncoder(0,10); //this sets the limits on the shaft encoder;
+    initShaftEncoder(0,shaftMAX); //this sets the limits on the shaft encoder;
     ds = new DotStrip(72);
     pattern = new Sequence (ds);
     
@@ -35,15 +35,21 @@ Serial.println(shaftCounter);
 if (shaftLongPressFlag == true )
   {
     shaftLongPressFlag=false;
-#ifdef DEBUGMAIN
-Serial.println("Initiating calibration sequence");
-#endif
-  pattern->calibrate();
-#ifdef DEBUGMAIN
-Serial.println("Calibration Complete");
-#endif
+    if (shaftCounter==0) // Long Press in the far left condition gives a recalibration sequence;
+    {
+        #ifdef DEBUGMAIN
+        Serial.println("Initiating calibration sequence");
+        #endif
+          pattern->calibrate();
+        #ifdef DEBUGMAIN
+        Serial.println("Calibration Complete");
+        #endif
+    }
+    if (shaftCounter==shaftMAX) //At far Right end, then we can toggle between various maximum LED lengths;
+    {
+        NULL;
+    }
   }
-
   
 #ifdef DEBUGMAIN
 static int lastShaft = -1;
@@ -100,8 +106,9 @@ static int lastShaft = -1;
     case 4:
          #ifdef DEBUGMAIN
             if (shaftCounter!= lastShaft) Serial.println("Showing MidRange");
-            lastShaft=shaftCounter;
-        #endif
+         #endif
+        lastShaft=shaftCounter;
+
         pattern->showAllChannels();
         break;
 
