@@ -1,4 +1,4 @@
-#define NUMPIXELS 144 // Number of LEDs in strip
+#define NUMPIXELS 150 // Number of LEDs in strip maximum allowed defines array bounds, what is used is controlled by the variable numPix
 #ifndef DOTSTRIPH
 #define DOTSTRIPH
 

@@ -33,11 +33,15 @@
 #define CALVU1AV 6
 #define CALVU1PEAK 8
 #define CALVU2MIN 10
-#define CALVU2AV 22
+#define CALVU2AV 12
 #define CALVU2PEAK 14
 #define CALVU3MIN 16
 #define CALVU3AV 18
 #define CALVU3PEAK 20
+
+//Used to store the number of LEDS
+#define LEDSIZE 22
+
 #endif
 
 #include "DotStrip.h"
@@ -48,8 +52,7 @@ class Sequence
   public:
   Sequence::Sequence(DotStrip*);
   void groovy (void);
-  void boogie (void);
-  void superFlash (void);
+  void superFlash (int);
   void strobeWhite (int);
   void strobeColour(int,int);
   void redBuild();
@@ -60,15 +63,19 @@ class Sequence
   void showBass();
   void showMid();
   void showTreble();
-  void showAllChannels();
+  void showBass(int);
+  void showMid(int);
+  void showTreble(int);
+  void showAllChannels(int);
   void goDark();
   void rainbowMix();
   void randomMix();
   void channelMovesRed();
+  void mixItUp();
+  void writeEPint(int addr, int inp);
+  int readEPint(int addr);
 
-  
-  
-  //private:
+private:
 
   bool checkBoot(void);
   DotStrip *ds;
@@ -90,12 +97,12 @@ class Sequence
   int SizeBlue=0;
   int GlobalBrightness=5; 
   bool Update = false;
+  int flashtrigger;
+  
   
   void sample();
   void calibrationSample();
   void loadCalibrations(void);
-  void writeEPint(int addr, int inp);
-  int readEPint(int addr);
   void rainbow (int);
   void inverseRainbow(int);
   void midRainbow(int);

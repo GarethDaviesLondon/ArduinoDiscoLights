@@ -10,8 +10,10 @@ Sequence *pattern;
 void setup() {
   
     initShaftEncoder(0,shaftMAX); //this sets the limits on the shaft encoder;
-    ds = new DotStrip(72);
+    ds = new DotStrip(NUMPIXELS);
     pattern = new Sequence (ds);
+    ds->setPixels(pattern->readEPint(LEDSIZE));
+    if ((ds->pixels()>NUMPIXELS) || (ds->pixels()<0) ) {ds->setPixels(NUMPIXELS);}
     
 #ifdef DEBUGMAIN
       Serial.begin(57600);     //Enable serial monitor line
@@ -65,6 +67,7 @@ if (shaftLongPressFlag == true )
               Serial.print(ds->pixels());
         #endif
         if (ds->pixels()==144) {ds->setPixels(72);} else {ds->setPixels(144);}
+        pattern->writeEPint(LEDSIZE,ds->pixels());
         pattern->strobeColour(3,5);
         delay(100);
         pattern->strobeColour(0,5);
@@ -95,26 +98,34 @@ static int lastShaft = -1;
     break;    
     case 1:
         #ifdef DEBUGMAIN
+            if (shaftCounter!= lastShaft) Serial.println("redBuild");
+         #endif
+        lastShaft=shaftCounter;
+        pattern->redBuild();
+        break;
+        
+    case 2:
+        #ifdef DEBUGMAIN
             if (shaftCounter!= lastShaft) Serial.println("Showing Bass");
             lastShaft=shaftCounter;
         #endif
         pattern->showBass();
         break;
-    case 2:
+    case 3:
         #ifdef DEBUGMAIN
             if (shaftCounter!= lastShaft) Serial.println("Showing Mid Range");
             lastShaft=shaftCounter;
         #endif
         pattern->showMid();
         break;
-    case 3:
+    case 4:
         #ifdef DEBUGMAIN
             if (shaftCounter!= lastShaft) Serial.println("Showing Treble");
             lastShaft=shaftCounter;
         #endif
         pattern->showTreble();
         break;
-    case 4:
+    case 5:
          #ifdef DEBUGMAIN
             if (shaftCounter!= lastShaft) Serial.println("Showing channelMovesRed");
          #endif
@@ -123,7 +134,7 @@ static int lastShaft = -1;
         pattern->channelMovesRed();
         break;
         
-    case 5:
+    case 6:
          #ifdef DEBUGMAIN
             if (shaftCounter!= lastShaft) Serial.println("Showing colourMix");
          #endif
@@ -131,7 +142,7 @@ static int lastShaft = -1;
 
         pattern->colourMix();
         break;
-    case 6:
+    case 7:
         #ifdef DEBUGMAIN
             if (shaftCounter!= lastShaft) Serial.println("Showing rainbowMix");
          #endif
@@ -139,30 +150,39 @@ static int lastShaft = -1;
 
         pattern->rainbowMix();
         break;
-    case 7:
+    case 8:
         #ifdef DEBUGMAIN
             if (shaftCounter!= lastShaft) Serial.println("Showing randomMix");
          #endif
         lastShaft=shaftCounter;
         pattern->randomMix();
         break;
-    case 8:
-        #ifdef DEBUGMAIN
-            if (shaftCounter!= lastShaft) Serial.println("redBuild");
-         #endif
-        lastShaft=shaftCounter;
-        pattern->redBuild();
-        break;
-
     case 9:
         #ifdef DEBUGMAIN
             if (shaftCounter!= lastShaft) Serial.println("superFlash");
          #endif
         lastShaft=shaftCounter;
-        pattern->superFlash();
+        pattern->superFlash(1);
+        delay(100);
         break;
-      
-     default:
+      case 10:
+        #ifdef DEBUGMAIN
+            if (shaftCounter!= lastShaft) Serial.println("groovy");
+         #endif
+        lastShaft=shaftCounter;
+        pattern->groovy();
+        delay(100);
+        break;
+
+     case 11:
+             #ifdef DEBUGMAIN
+            if (shaftCounter!= lastShaft) Serial.println("mixItUp");
+         #endif
+        lastShaft=shaftCounter;
+        pattern->mixItUp();
+        break;
+
+        default:
 #ifdef DEBUGMAIN
             if (shaftCounter!= lastShaft) {
               Serial.print(shaftCounter);

@@ -244,8 +244,8 @@ void shaftPushSwitchISR()
     EEPROM.write(shaftPROPOSEDRUNSTATE,shaftCounter); //Write the current value of the shaft encoder into the EEPROM for reboot.
     shaftReboot();
     pattern->communicate(shaftCounter);
-    
   }
+  interrupts();
 }
 
 void shaftRotateISR()

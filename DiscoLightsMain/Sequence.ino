@@ -16,6 +16,7 @@ Sequence::Sequence (DotStrip *dotin)
   ds->offAll();
   ds->show();
   loadCalibrations();
+  flashtrigger=10; //this is used in the mixItUp routine
 }
 
 //Some methods for controlling flow
@@ -328,54 +329,6 @@ void Sequence::goDark()
   ds->show();
 }
 
-void Sequence::showBass()
-{
-  sample();
-  barGraph(vu2Scale,255,0,0);
-#ifdef SEQUENCEDEUG
-  Serial.print("Base : Sample ");
-  Serial.print(vu2Sam);
-  Serial.print(" ++  : Calibration ");
-  printVoltage(vu2Peak,vu2Av,vu2Min);
-  Serial.print(" Scale Max ");
-  Serial.print(ds->pixels());
-  Serial.print(" Scale Result ");
-  Serial.println(vu);
-#endif
-}
-
-void Sequence::showMid()
-{
-  sample();
-  barGraph(vu3Scale,0,255,0);
-#ifdef SEQUENCEDEUG
-  Serial.print("Base : Sample ");
-  Serial.print(vu3Sam);
-  Serial.print(" ++  : Calibration ");
-  printVoltage(vu3Peak,vu3Av,vu3Min);
-  Serial.print(" Scale Max ");
-  Serial.print(ds->pixels());
-  Serial.print(" Scale Result ");
-  Serial.println(vu);
-#endif
-}
-
-void Sequence::showTreble()
-{
-  sample();
-  barGraph(vu1Scale,0,0,255);
-#ifdef SEQUENCEDEUG
-  Serial.print("Base : Sample ");
-  Serial.print(vu1Sam);
-  Serial.print(" ++  : Calibration ");
-  printVoltage(vu1Peak,vu1Av,vu1Min);
-  Serial.print(" Scale Max ");
-  Serial.print(ds->pixels());
-  Serial.print(" Scale Result ");
-  Serial.println(vu);
-#endif
-  
-}
 
 
 
@@ -577,52 +530,47 @@ void Sequence::redBuild(void)
     {
       if (shaftInterruptOccurred==true) return NULL;
       kitLength=wizloop;
-      for (int kit = 0; kit < ds->pixels() -kitLength;kit++)
+      for (int kit = 0; kit < ds->pixels()-kitLength;kit++)
       {
-        if (checkBoot()==true) return; //abort if interrupt happened.
-        if (shaftInterruptOccurred==true) return NULL;
         ds->offAll();
         for (int lightup = 0; lightup < kitLength; lightup++)
         {
           ds->turnRed(kit+lightup,64);
         }
         ds->turnRed(kit+(kitLength/2),255);
+        if (shaftInterruptOccurred==true) return NULL;
         ds->show();
       }
   
       for (int kit = ds->pixels() -kitLength; kit >=0;kit--)
       {
-        if (checkBoot()==true) return; //abort if interrupt happened.
-        if (shaftInterruptOccurred==true) return NULL;
         ds->offAll();
         for (int lightup = 0; lightup < kitLength; lightup++)
         {
           ds->turnRed(kit+lightup,128);
         }
         ds->turnRed(kit+(kitLength/2),255);
+        if (shaftInterruptOccurred==true) return NULL;
         ds->show();
       }
     } //Wizloop
 }
 
 
-void Sequence::superFlash(void)
+void Sequence::superFlash(int rep)
 {  
-     strobeColour(1,20);
-     if (shaftInterruptOccurred==true) return NULL;
-     strobeColour(2,20);
-     if (shaftInterruptOccurred==true) return NULL;
-     strobeWhite(20);
-     if (shaftInterruptOccurred==true) return NULL;
-     int d=200;
-     for (int a=0;a<20;a ++)
-     {
-      strobeWhite(1);
-      delay(d);
-      d+=50;
-     }
-     strobeColour(0,5);
-     if (checkBoot()==true) return NULL; //abort if interrupt happened.
+    for (int x=0;x<rep;x++)
+    {
+       if (shaftInterruptOccurred==true) return NULL;
+       strobeWhite(5);
+       if (shaftInterruptOccurred==true) return NULL;
+       strobeColour(0,5);
+       if (shaftInterruptOccurred==true) return NULL;
+       strobeColour(1,5);
+       if (shaftInterruptOccurred==true) return NULL;
+       strobeColour(2,5);
+       if (shaftInterruptOccurred==true) return NULL;
+    }
 }
 
 void Sequence::lightsRight(int pix,int red)
@@ -672,8 +620,6 @@ void Sequence::lightsMid(int pix,int red)
       int green = 255-(red/2);
       int blue = green;
 
-     
-       
       //from Left trail to the middle
       ds->turnOn(maxP-pix-3,red,green,blue,31); //left from middle
       for (int a=maxP-pix-2;a<=(maxP-pix);a++)
@@ -691,7 +637,133 @@ void Sequence::lightsMid(int pix,int red)
       }
 }
 
+void Sequence::groovy(void)
+{
+    int a =0;
+    int b=0;
+    int c=10;
+    int trail=30;
+    int loop=1;
+
+    for (c=0;c<trail;c++)
+    {
+      ds->offAll();
+      for(a=0;a<ds->pixels();a++)
+      {
+        ds->turnOn(a+trail,RED,GREEN,BLUE,31);
+        ds->turnOn(ds->pixels()-a-trail,RED,GREEN,BLUE,31);
+        for (b=0;b<c;b++)
+        {
+          if (shaftInterruptOccurred==true) return NULL;
+          ds->turnOn(a+trail,RED,GREEN,BLUE,1);
+          ds->turnOn(ds->pixels()-b,RED,GREEN,BLUE,1);
+          if (loop==1) {if (RED++==0) if (GREEN++==0) BLUE++; }//if (BLUE=254) loop++;}
+          if (loop==2) {if (GREEN++==0) if (BLUE++==0) RED++; }//if (RED=254) loop++;}
+          if (loop==3) {if (BLUE++==0) if (RED++==0) GREEN++;}//if (GREEN=254) loop++;}
+          if (loop==4) {if (BLUE++==0) if (GREEN++==0) RED++; }//if (RED=254) loop++;}
+          if (loop==5) {if (GREEN++==0) if (RED++==0) BLUE++; }//if (BLUE=254) loop=1;}
+        }
+        ds->offOne(a-c+1);
+        ds->offOne(ds->pixels()+1-a);
+        if (loop==6) {
+          loop=0;
+        }
+        loop++;
+      }
+      ds->show();
+    }
+}
+
 ///Simple Patterns to music
+
+
+void Sequence::showBass(){showBass(0);}
+void Sequence::showBass(int mode)
+{
+  sample();
+  switch (mode)
+  {
+    case 0:
+        barGraph(vu2Scale,255,0,0);
+        break;
+    case 1:
+        inverseBarGraph(vu2Scale,255,0,0);
+        break;
+    default:
+        midBarGraph(vu2Scale,255,0,0);
+        break;
+  }
+
+#ifdef SEQUENCEDEUG
+  Serial.print("Base : Sample ");
+  Serial.print(vu2Sam);
+  Serial.print(" ++  : Calibration ");
+  printVoltage(vu2Peak,vu2Av,vu2Min);
+  Serial.print(" Scale Max ");
+  Serial.print(ds->pixels());
+  Serial.print(" Scale Result ");
+  Serial.println(vu);
+#endif
+}
+
+void Sequence::showMid() {showMid(0);}
+void Sequence::showMid(int mode)
+{
+  sample();
+  switch (mode)
+  {
+    case 0:
+        barGraph(vu3Scale,255,0,0);
+        break;
+    case 1:
+        inverseBarGraph(vu3Scale,255,0,0);
+        break;
+    default:
+        midBarGraph(vu3Scale,255,0,0);
+        break;
+  }
+
+#ifdef SEQUENCEDEUG
+  Serial.print("Base : Sample ");
+  Serial.print(vu3Sam);
+  Serial.print(" ++  : Calibration ");
+  printVoltage(vu3Peak,vu3Av,vu3Min);
+  Serial.print(" Scale Max ");
+  Serial.print(ds->pixels());
+  Serial.print(" Scale Result ");
+  Serial.println(vu);
+#endif
+}
+
+void Sequence::showTreble() {showTreble(0);}
+void Sequence::showTreble(int mode)
+{
+  sample();
+  switch (mode)
+  {
+    case 0:
+        barGraph(vu1Scale,255,0,0);
+        break;
+    case 1:
+        inverseBarGraph(vu1Scale,255,0,0);
+        break;
+    default:
+        midBarGraph(vu1Scale,255,0,0);
+        break;
+  }
+#ifdef SEQUENCEDEUG
+  Serial.print("Base : Sample ");
+  Serial.print(vu1Sam);
+  Serial.print(" ++  : Calibration ");
+  printVoltage(vu1Peak,vu1Av,vu1Min);
+  Serial.print(" Scale Max ");
+  Serial.print(ds->pixels());
+  Serial.print(" Scale Result ");
+  Serial.println(vu);
+#endif
+  
+}
+
 
 void Sequence::channelMovesRed()
 {
@@ -732,69 +804,75 @@ void Sequence::randomMix()
 }
 
 
-
-//Multi Channel Effects
-
-
-void Sequence::boogie(void)
+void Sequence::mixItUp()
 {
-    sample();
-}
-
-void Sequence::groovy(void)
-{
-    int a =0;
-    int b=0;
-    int c=10;
-    int trail=30;
-    int loop=1;
-    for (c=0;c<trail;c++)
-    {
-      ds->offAll();
-      for(a=0;a<ds->pixels();a++)
-      {
-        if (checkBoot()==true) return; //abort if interrupt happened.
-        ds->turnOn(a+trail,RED,GREEN,BLUE,31);
-        ds->turnOn(ds->pixels()-a-trail,RED,GREEN,BLUE,31);
-        for (b=0;b<c;b++)
-        {
-          ds->turnOn(a+trail,RED,GREEN,BLUE,1);
-          ds->turnOn(ds->pixels()-b,RED,GREEN,BLUE,1);
-          if (loop==1) {if (RED++==0) if (GREEN++==0) BLUE++; }//if (BLUE=254) loop++;}
-          if (loop==2) {if (GREEN++==0) if (BLUE++==0) RED++; }//if (RED=254) loop++;}
-          if (loop==3) {if (BLUE++==0) if (RED++==0) GREEN++;}//if (GREEN=254) loop++;}
-          if (loop==4) {if (BLUE++==0) if (GREEN++==0) RED++; }//if (RED=254) loop++;}
-          if (loop==5) {if (GREEN++==0) if (RED++==0) BLUE++; }//if (BLUE=254) loop=1;}
-        }
-        ds->offOne(a-c+1);
-        ds->offOne(ds->pixels()+1-a);
-        if (loop==6) {
-          loop=0;
-        }
-        loop++;
-      }
-    }
-}
-
-
-void Sequence::showAllChannels()
-{
-  ds->offAll();
-  sample();
-  int vu1=map(vu1Sam,vu1Min,vu1Peak,0,ds->pixels());
-  int vu2=map(vu2Sam,vu2Min,vu2Peak,0,ds->pixels());
-  int vu3=map(vu3Sam,vu2Min,vu2Peak,0,ds->pixels());
+ int a=random(0,10);
+ int mode=random(0,3);
+ int repcount=20;
+ sample();
  
-  for (int a=0;a<=ds->pixels();a++)
+  switch(a)
   {
-    int r,g,b=0;
-    if (vu2>=a) r=255;
-    if (vu3>=a) g=255;
-    if (vu1>=a) b=255;
-    ds->turnOn(a,r,g,b,31);
-    if ( (a>vu1) & (a>vu2) & (a>vu3)) break;
+    case 1:
+          for (int z=0;z<repcount/4;z++)
+          {
+            channelMovesRed();
+          }
+          break;
+    case 2:
+     for (int z=0;z<repcount;z++)
+          {
+            colourMix();
+          }
+          break;
+    case 3:
+     for (int z=0;z<repcount;z++)
+          {
+            rainbowMix();
+          }
+          break;
+    case 4:
+     for (int z=0;z<repcount;z++)
+          {
+            randomMix();
+          }
+          break;
+    case 5:
+     for (int z=0;z<repcount;z++)
+          {
+            showTreble(mode);
+          }
+          break;
+    case 6:
+     for (int z=0;z<repcount;z++)
+          {
+            showBass(mode);
+          }
+          break;
+    case 7:
+     for (int z=0;z<repcount;z++)
+          {
+            showMid(mode);
+          }
+          break;
+    case 8:
+      
+          break;
+    case 9:
+     
+          break;
+    case 10:
+           flashtrigger++;
+           if (flashtrigger==10) 
+           {
+            flashtrigger=0;
+            superFlash(1);
+           }
+    default:
+          break;
   }
-  ds->show();
 }
+
+
 
 
