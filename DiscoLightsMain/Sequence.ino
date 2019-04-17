@@ -19,13 +19,6 @@ Sequence::Sequence (DotStrip *dotin)
   flashtrigger=10; //this is used in the mixItUp routine
 }
 
-//Some methods for controlling flow
-bool Sequence::checkBoot(void)
-{
-  return shaftRebootFlag;
-}
-
-
 /*
  * This is the main sample capture routine.
  * During calibration it averages a larger number of samples
@@ -637,42 +630,6 @@ void Sequence::lightsMid(int pix,int red)
       }
 }
 
-void Sequence::groovy(void)
-{
-    int a =0;
-    int b=0;
-    int c=10;
-    int trail=30;
-    int loop=1;
-
-    for (c=0;c<trail;c++)
-    {
-      ds->offAll();
-      for(a=0;a<ds->pixels();a++)
-      {
-        ds->turnOn(a+trail,RED,GREEN,BLUE,31);
-        ds->turnOn(ds->pixels()-a-trail,RED,GREEN,BLUE,31);
-        for (b=0;b<c;b++)
-        {
-          if (shaftInterruptOccurred==true) return NULL;
-          ds->turnOn(a+trail,RED,GREEN,BLUE,1);
-          ds->turnOn(ds->pixels()-b,RED,GREEN,BLUE,1);
-          if (loop==1) {if (RED++==0) if (GREEN++==0) BLUE++; }//if (BLUE=254) loop++;}
-          if (loop==2) {if (GREEN++==0) if (BLUE++==0) RED++; }//if (RED=254) loop++;}
-          if (loop==3) {if (BLUE++==0) if (RED++==0) GREEN++;}//if (GREEN=254) loop++;}
-          if (loop==4) {if (BLUE++==0) if (GREEN++==0) RED++; }//if (RED=254) loop++;}
-          if (loop==5) {if (GREEN++==0) if (RED++==0) BLUE++; }//if (BLUE=254) loop=1;}
-        }
-        ds->offOne(a-c+1);
-        ds->offOne(ds->pixels()+1-a);
-        if (loop==6) {
-          loop=0;
-        }
-        loop++;
-      }
-      ds->show();
-    }
-}
 
 ///Simple Patterns to music
 
@@ -807,8 +764,8 @@ void Sequence::randomMix()
 void Sequence::mixItUp()
 {
  int a=random(0,10);
- int mode=random(0,3);
- int repcount=20;
+ int mode=random(0,2);
+ int repcount=random(15,75);
  sample();
  
   switch(a)

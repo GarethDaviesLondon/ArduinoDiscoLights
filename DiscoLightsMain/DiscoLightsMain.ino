@@ -165,16 +165,7 @@ static int lastShaft = -1;
         pattern->superFlash(1);
         delay(100);
         break;
-      case 10:
-        #ifdef DEBUGMAIN
-            if (shaftCounter!= lastShaft) Serial.println("groovy");
-         #endif
-        lastShaft=shaftCounter;
-        pattern->groovy();
-        delay(100);
-        break;
-
-     case 11:
+     case 10:
              #ifdef DEBUGMAIN
             if (shaftCounter!= lastShaft) Serial.println("mixItUp");
          #endif

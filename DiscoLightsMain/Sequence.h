@@ -50,8 +50,9 @@
 class Sequence
 {
   public:
+  
   Sequence::Sequence(DotStrip*);
-  void groovy (void);
+  
   void superFlash (int);
   void strobeWhite (int);
   void strobeColour(int,int);
@@ -77,26 +78,16 @@ class Sequence
 
 private:
 
-  bool checkBoot(void);
   DotStrip *ds;
   int TrebleAnalogPin = A3;
   int BassAnalogPin = A2;
   int MidAnalogPin = A1;
-  int intensity = 30;
-  unsigned char mainRED=128;
-  unsigned char mainBLUE=128;
-  unsigned char mainGreen=128;
-  unsigned char mainBRIGHTNESS=16;
-  unsigned char RED,GREEN,BLUE;
   int vu1Av,vu2Av,vu3Av=0;  
   int vu1Peak,vu2Peak,vu3Peak=0;
   int vu1Min,vu2Min,vu3Min=1024;
   int vu1Sam,vu2Sam,vu3Sam=0;
   int vu1Scale,vu2Scale,vu3Scale;
-  int SizeRed=0;
-  int SizeBlue=0;
   int GlobalBrightness=5; 
-  bool Update = false;
   int flashtrigger;
   
   
