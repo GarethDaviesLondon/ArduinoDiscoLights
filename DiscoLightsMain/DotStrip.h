@@ -17,10 +17,9 @@ class DotStrip
     void setGlobalBrightness(byte Brightness);
     void offAll(void);
     void offOne(int a);
-    int pixels(void)
-    {
-      return (numPixels);
-    }
+    int pixels(void);
+    void setPixels(int);
+
     
   private:
   

@@ -178,6 +178,7 @@ void shaftConfirm(int flashCount)
 //When the switch is pushed, this will
 void shaftPushSwitchISR()
 {
+  shaftInterruptOccurred=true;
   noInterrupts();
   #ifdef DEBUGSHAFTENCODER
       Serial.println("Button Push Detected");
@@ -249,6 +250,7 @@ void shaftPushSwitchISR()
 
 void shaftRotateISR()
 {
+   shaftInterruptOccurred=true;
    noInterrupts();
    shaftBState = digitalRead(shaftOutputB);
    shaftAState = digitalRead(shaftOutputA); // Reads the "current" state of the outputA

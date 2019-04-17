@@ -63,6 +63,24 @@ void DotStrip::testPins()
 }
 
 
+int DotStrip::pixels(void)
+{
+      return (numPixels);
+}
+
+void DotStrip::setPixels(int numP)
+{
+  
+     if ( (numP > NUMPIXELS) | (numP < 0) )
+          {
+            numPixels = NUMPIXELS;
+          }
+          else
+          {
+            numPixels=numP;
+          }
+ }
+
 /*This turns on a pixel inside the array with the specified amount etc.*/
 /*Order of Pixels on DotStar is BLUE,GREEN,RED*/
 

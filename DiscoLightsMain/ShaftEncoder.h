@@ -38,5 +38,6 @@ int shaftCounter;
 int sMax,sMin;
 bool shaftRebootFlag=false;
 bool shaftLongPressFlag=false;
+bool shaftInterruptOccurred=false;
 
 #endif

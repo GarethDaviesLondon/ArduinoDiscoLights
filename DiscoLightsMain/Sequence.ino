@@ -66,11 +66,19 @@ void Sequence::sample()
               vuSample = analogRead(MidAnalogPin);
               if (vuSample>vu3Sam) vu3Sam=vuSample;;
     }
+     
+      vu1Scale=map(vu1Sam,vu1Min,vu1Peak,0,ds->pixels());
+      vu2Scale=map(vu2Sam,vu2Min,vu2Peak,0,ds->pixels());
+      vu3Scale=map(vu3Sam,vu3Min,vu3Peak,0,ds->pixels());
+      
+      if (vu1Scale>ds->pixels()) {vu1Scale=ds->pixels();} 
+      if (vu2Scale>ds->pixels()) {vu2Scale=ds->pixels();}
+      if (vu3Scale>ds->pixels()) {vu3Scale=ds->pixels();}
 
-      vu1Scale=map(vu1Sam,vu1Min,vu1Peak,0,NUMPIXELS);
-      vu2Scale=map(vu2Sam,vu2Min,vu2Peak,0,NUMPIXELS);
-      vu3Scale=map(vu3Sam,vu3Min,vu3Peak,0,NUMPIXELS);
-
+      if (vu1Scale<0) {vu1Scale=0;} 
+      if (vu2Scale<0) {vu2Scale=0;}
+      if (vu3Scale<0) {vu3Scale=0;}
+  
       #ifdef SEQUENCEDEUGSAMPLE
         stoptime=millis();
         Serial.print("Sampling stoptime ");
@@ -330,7 +338,7 @@ void Sequence::showBass()
   Serial.print(" ++  : Calibration ");
   printVoltage(vu2Peak,vu2Av,vu2Min);
   Serial.print(" Scale Max ");
-  Serial.print(NUMPIXELS);
+  Serial.print(ds->pixels());
   Serial.print(" Scale Result ");
   Serial.println(vu);
 #endif
@@ -346,7 +354,7 @@ void Sequence::showMid()
   Serial.print(" ++  : Calibration ");
   printVoltage(vu3Peak,vu3Av,vu3Min);
   Serial.print(" Scale Max ");
-  Serial.print(NUMPIXELS);
+  Serial.print(ds->pixels());
   Serial.print(" Scale Result ");
   Serial.println(vu);
 #endif
@@ -362,12 +370,15 @@ void Sequence::showTreble()
   Serial.print(" ++  : Calibration ");
   printVoltage(vu1Peak,vu1Av,vu1Min);
   Serial.print(" Scale Max ");
-  Serial.print(NUMPIXELS);
+  Serial.print(ds->pixels());
   Serial.print(" Scale Result ");
   Serial.println(vu);
 #endif
   
 }
+
+
+
 
 void Sequence::communicate(int mode)
 {
@@ -399,8 +410,10 @@ void Sequence::communicate(int mode)
 ////// END SIMPLE EXERCISES
 
 
-//Fixed Pattern Sequences here
 
+/////////////////////////////////////////
+//level driven patterns (graphs) here
+////////////////////////////////////////
 
 void Sequence::barGraph(int level,int red, int green, int blue)
 {
@@ -413,11 +426,114 @@ void Sequence::barGraph(int level,int red, int green, int blue)
   ds->show();
 }
 
+void Sequence::inverseBarGraph(int level,int red, int green, int blue)
+{
+
+  ds->offAll();
+  for (int a=ds->pixels();a>=ds->pixels()-level;a--)
+  {
+    ds->turnOn(a,red,green,blue,31);
+  }
+  ds->show();
+}
+
+void Sequence::midBarGraph(int level,int red, int green, int blue)
+{
+
+  ds->offAll();
+  for (int a=ds->pixels()/2;a>=(ds->pixels()/2)-(level/2);a--)
+  {
+    ds->turnOn(a,red,green,blue,31);
+  }
+  ds->show();
+  for (int a=ds->pixels()/2;a<=(ds->pixels()/2)+(level/2);a++)
+  {
+    ds->turnOn(a,red,green,blue,31);
+  }
+  ds->show();
+}
+
+
+void Sequence::randomColour(int level,int col)
+{
+  barGraph(level,col,255-col,255-(255-col));
+}
+
+void Sequence::inverseRandomColour(int level, int col)
+{
+  inverseBarGraph(level,col,255-col,255-(255+col));
+}
+
+void Sequence::midRandomColour(int level, int col)
+{
+  midBarGraph(level,col,255-col,255-(255+col));
+}
+
+void Sequence::rainbow(int level)
+{
+
+  if (level>=ds->pixels()-5) {level=ds->pixels()-5;}
+  ds->offAll();
+  for (int a=0;a<level;a+=5)
+  {
+    ds->turnOn(a,255,0,0,31);
+    ds->turnOn(a+1,255,255,0);
+    ds->turnOn(a+2,0,255,0);
+    ds->turnOn(a+3,0,0,255);
+    ds->turnOn(a+4,143,0,255);
+  }
+  ds->show();
+}
+
+void Sequence::inverseRainbow(int level)
+{
+ if (level>=ds->pixels()-5) {level=ds->pixels()-5;}
+ ds->offAll();
+  for (int a=ds->pixels();a>(ds->pixels()-(level/2));a-=5)
+  {
+    ds->turnOn(a,255,0,0,31);
+    ds->turnOn(a-1,255,255,0);
+    ds->turnOn(a-2,0,255,0);
+    ds->turnOn(a-3,0,0,255);
+    ds->turnOn(a-4,143,0,255);
+  }
+  ds->show(); 
+}
+
+void Sequence::midRainbow(int level)
+{
+ ds->offAll();
+ if (level>=ds->pixels()-5) {level=ds->pixels()-5;}
+ int mid=ds->pixels()/2;
+ int sig=level/2;
+ //Go left;
+  for (int a=mid;a>(mid-(sig));a-=5)
+  {
+    ds->turnOn(a,255,0,0,31);
+    ds->turnOn(a-1,255,255,0);
+    ds->turnOn(a-2,0,255,0);
+    ds->turnOn(a-3,0,0,255);
+    ds->turnOn(a-4,143,0,255);
+  }
+   //Go right;
+  for (int a=mid;a<(mid+(sig));a+=5)
+  {
+    ds->turnOn(a,255,0,0,31);
+    ds->turnOn(a+1,255,255,0);
+    ds->turnOn(a+2,0,255,0);
+    ds->turnOn(a+3,0,0,255);
+    ds->turnOn(a+4,143,0,255);
+  }
+  ds->show(); 
+}
+
+///////////////////Non measurement routines
+
 void Sequence::strobeWhite(int loops)
 {
   for (int a = 0; a<loops;a++)
      {
-      if (checkBoot()) return; //abort if interrupt happened.
+      if (shaftInterruptOccurred==true) return NULL;
        for (int a = 0;a <ds->pixels();a++)
        {
         ds->turnOn(a,255,255,255,255);
@@ -434,7 +550,7 @@ void Sequence::strobeColour(int code,int loops)
 {
   for (int count=0;count<loops;count++)
       {
-        if (checkBoot()) return; //abort if interrupt happened.
+        if (shaftInterruptOccurred==true) return NULL;
         for (int a=0;a<ds->pixels();a++)
         {
           switch (code)
@@ -459,10 +575,12 @@ void Sequence::redBuild(void)
    int kitLength=10; //numper of pixels to chase each other.
     for (int wizloop=0;wizloop<ds->pixels();wizloop++)
     {
+      if (shaftInterruptOccurred==true) return NULL;
       kitLength=wizloop;
       for (int kit = 0; kit < ds->pixels() -kitLength;kit++)
       {
-        if (checkBoot()) return; //abort if interrupt happened.
+        if (checkBoot()==true) return; //abort if interrupt happened.
+        if (shaftInterruptOccurred==true) return NULL;
         ds->offAll();
         for (int lightup = 0; lightup < kitLength; lightup++)
         {
@@ -474,7 +592,8 @@ void Sequence::redBuild(void)
   
       for (int kit = ds->pixels() -kitLength; kit >=0;kit--)
       {
-        if (checkBoot()) return; //abort if interrupt happened.
+        if (checkBoot()==true) return; //abort if interrupt happened.
+        if (shaftInterruptOccurred==true) return NULL;
         ds->offAll();
         for (int lightup = 0; lightup < kitLength; lightup++)
         {
@@ -482,7 +601,6 @@ void Sequence::redBuild(void)
         }
         ds->turnRed(kit+(kitLength/2),255);
         ds->show();
-        
       }
     } //Wizloop
 }
@@ -490,10 +608,12 @@ void Sequence::redBuild(void)
 
 void Sequence::superFlash(void)
 {  
-     redBuild();
      strobeColour(1,20);
+     if (shaftInterruptOccurred==true) return NULL;
      strobeColour(2,20);
+     if (shaftInterruptOccurred==true) return NULL;
      strobeWhite(20);
+     if (shaftInterruptOccurred==true) return NULL;
      int d=200;
      for (int a=0;a<20;a ++)
      {
@@ -502,8 +622,115 @@ void Sequence::superFlash(void)
       d+=50;
      }
      strobeColour(0,5);
-     if (checkBoot()) return; //abort if interrupt happened.
+     if (checkBoot()==true) return NULL; //abort if interrupt happened.
 }
+
+void Sequence::lightsRight(int pix,int red)
+{
+      ds->offAll();
+      int green = 255-(red/2);
+      int blue = green;
+      int maxP=ds->pixels();
+      if (pix<5) {pix=6;}
+      if (pix> maxP){pix=maxP-6;}
+      ds->turnOn(pix+6,red,green,blue,31);
+      for (int a=pix+5;a>pix;a--) //this gives the flash-fade to the left of the main
+      {
+        ds->turnOn(a,red,green,blue,5);
+        delay(10);
+        ds->show();
+      }
+      //ds->show();
+}
+
+void Sequence::lightsLeft(int pix,int red)
+{
+      ds->offAll();
+      int green = 255-(red/2);
+      int blue = green;
+      int maxP=ds->pixels();
+      if (pix<5) {pix=6;}
+      if (pix> maxP){pix=maxP-6;}
+      ds->turnOn(maxP-pix-6,red,green,blue,31);
+      for (int a=(maxP-pix-5);a<(maxP-pix);a++)
+      {
+        ds->turnOn(a,red,green,blue,5);
+        delay(10);
+        ds->show();
+      }
+      //ds->show();
+}
+
+void Sequence::lightsMid(int pix,int red)
+{
+      ds->offAll();
+      int maxP=ds->pixels();
+      if (pix<6) {pix=6;}
+      if (pix> maxP){pix=maxP-6;}
+      maxP=maxP/2;
+      pix=pix/2;
+      int green = 255-(red/2);
+      int blue = green;
+
+     
+       
+      //from Left trail to the middle
+      ds->turnOn(maxP-pix-3,red,green,blue,31); //left from middle
+      for (int a=maxP-pix-2;a<=(maxP-pix);a++)
+      {
+        ds->turnOn(a,red,green,blue,5);
+        ds->show();
+      }
+      
+      //from right end to the middle
+      ds->turnOn(maxP+pix+3,red,green,blue,31); //right from middle
+      for (int a=maxP+pix+2;a>=(maxP+pix);a--)
+      {
+        ds->turnOn(a,red,green,blue,5);
+        ds->show();
+      }
+}
+
+///Simple Patterns to music
+
+void Sequence::channelMovesRed()
+{
+  sample();
+  lightsMid(vu2Scale,random(0,50));
+  lightsRight(vu1Scale,random(0,100));
+  lightsLeft(vu3Scale,random(150,250));
+}
+
+void Sequence::colourMix()
+{
+  sample();
+  int r=vu2Scale+vu2Scale+vu1Scale+vu3Scale;
+  r=map(r,ds->pixels()*4,0,255,0);
+  int g=255-r;
+  int b=255-r-g;
+  barGraph(vu1Scale,r,g,b);
+  inverseBarGraph(vu2Scale,r,g,b);
+}
+
+
+void Sequence::rainbowMix()
+{
+  sample();
+  rainbow(vu1Scale);
+  delay(10);
+  inverseRainbow(vu3Scale);
+  delay(10);
+  midRainbow(vu2Scale);
+}
+
+void Sequence::randomMix()
+{
+  sample();
+  randomColour(vu1Scale,random(100,200));
+  midRandomColour(vu2Scale,random(0,255));
+  inverseRandomColour(vu3Scale,random(0,100));
+}
+
 
 
 //Multi Channel Effects
@@ -524,15 +751,15 @@ void Sequence::groovy(void)
     for (c=0;c<trail;c++)
     {
       ds->offAll();
-      for(a=0;a<NUMPIXELS;a++)
+      for(a=0;a<ds->pixels();a++)
       {
         if (checkBoot()==true) return; //abort if interrupt happened.
         ds->turnOn(a+trail,RED,GREEN,BLUE,31);
-        ds->turnOn(NUMPIXELS-a-trail,RED,GREEN,BLUE,31);
+        ds->turnOn(ds->pixels()-a-trail,RED,GREEN,BLUE,31);
         for (b=0;b<c;b++)
         {
           ds->turnOn(a+trail,RED,GREEN,BLUE,1);
-          ds->turnOn(NUMPIXELS-b,RED,GREEN,BLUE,1);
+          ds->turnOn(ds->pixels()-b,RED,GREEN,BLUE,1);
           if (loop==1) {if (RED++==0) if (GREEN++==0) BLUE++; }//if (BLUE=254) loop++;}
           if (loop==2) {if (GREEN++==0) if (BLUE++==0) RED++; }//if (RED=254) loop++;}
           if (loop==3) {if (BLUE++==0) if (RED++==0) GREEN++;}//if (GREEN=254) loop++;}
@@ -540,7 +767,7 @@ void Sequence::groovy(void)
           if (loop==5) {if (GREEN++==0) if (RED++==0) BLUE++; }//if (BLUE=254) loop=1;}
         }
         ds->offOne(a-c+1);
-        ds->offOne(NUMPIXELS+1-a);
+        ds->offOne(ds->pixels()+1-a);
         if (loop==6) {
           loop=0;
         }
@@ -554,11 +781,11 @@ void Sequence::showAllChannels()
 {
   ds->offAll();
   sample();
-  int vu1=map(vu1Sam,vu1Min,vu1Peak,0,NUMPIXELS);
-  int vu2=map(vu2Sam,vu2Min,vu2Peak,0,NUMPIXELS);
-  int vu3=map(vu3Sam,vu2Min,vu2Peak,0,NUMPIXELS);
+  int vu1=map(vu1Sam,vu1Min,vu1Peak,0,ds->pixels());
+  int vu2=map(vu2Sam,vu2Min,vu2Peak,0,ds->pixels());
+  int vu3=map(vu3Sam,vu2Min,vu2Peak,0,ds->pixels());
  
-  for (int a=0;a<=NUMPIXELS;a++)
+  for (int a=0;a<=ds->pixels();a++)
   {
     int r,g,b=0;
     if (vu2>=a) r=255;

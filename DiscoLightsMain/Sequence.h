@@ -53,19 +53,22 @@ class Sequence
   void strobeWhite (int);
   void strobeColour(int,int);
   void redBuild();
+  void colourMix();
   void communicate(int);
   void calibrate(void);
   bool isCalibrated(void);
-  void barGraph(int level,int,int,int);
   void showBass();
   void showMid();
   void showTreble();
   void showAllChannels();
   void goDark();
+  void rainbowMix();
+  void randomMix();
+  void channelMovesRed();
 
   
   
-  private:
+  //private:
 
   bool checkBoot(void);
   DotStrip *ds;
@@ -93,6 +96,18 @@ class Sequence
   void loadCalibrations(void);
   void writeEPint(int addr, int inp);
   int readEPint(int addr);
+  void rainbow (int);
+  void inverseRainbow(int);
+  void midRainbow(int);
+  void randomColour(int,int);
+  void inverseRandomColour(int,int);
+  void midRandomColour(int,int);
+  void barGraph(int,int,int,int);
+  void inverseBarGraph(int,int,int,int);
+  void midBarGraph(int,int,int,int);
+  void lightsRight(int,int);
+  void lightsLeft(int,int);
+  void lightsMid(int,int);
 
 };
 

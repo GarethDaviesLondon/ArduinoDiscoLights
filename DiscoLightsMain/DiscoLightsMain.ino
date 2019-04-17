@@ -23,14 +23,24 @@ void setup() {
 
 void loop ()
 {
+  
+#ifdef DEBUGMAIN
+  if (shaftInterruptOccurred == true)
+  {
+Serial.println("Interrupt has Occurred");
+  }
   if (shaftRebootFlag == true )
   {
-    shaftRebootFlag=false;
-#ifdef DEBUGMAIN
 Serial.println("Changing to sequence");
 Serial.println(shaftCounter);
-#endif
+pattern->strobeColour(0,1);
+delay(100);
+pattern->strobeWhite(1);
   }
+#endif
+
+  shaftRebootFlag=false;
+  shaftInterruptOccurred=false;
 
 if (shaftLongPressFlag == true )
   {
@@ -40,14 +50,30 @@ if (shaftLongPressFlag == true )
         #ifdef DEBUGMAIN
         Serial.println("Initiating calibration sequence");
         #endif
-          pattern->calibrate();
+        pattern->strobeColour(2,10);
+        pattern->calibrate();
+        delay(100);
+        pattern->strobeWhite(1);
         #ifdef DEBUGMAIN
         Serial.println("Calibration Complete");
         #endif
     }
     if (shaftCounter==shaftMAX) //At far Right end, then we can toggle between various maximum LED lengths;
     {
-        NULL;
+        #ifdef DEBUGMAIN
+              Serial.print("Changing light length was ");
+              Serial.print(ds->pixels());
+        #endif
+        if (ds->pixels()==144) {ds->setPixels(72);} else {ds->setPixels(144);}
+        pattern->strobeColour(3,5);
+        delay(100);
+        pattern->strobeColour(0,5);
+        delay(100);
+        pattern->strobeWhite(1);
+        #ifdef DEBUGMAIN
+              Serial.print(" Now ");
+              Serial.println(ds->pixels());
+        #endif   
     }
   }
   
@@ -58,22 +84,7 @@ static int lastShaft = -1;
   
   switch (shaftCounter)
   {
-
-    /*
-    case 0:  
-        pattern->groovy();
-        break;
-         
-    case 1: 
-        pattern->boogie();
-        break;
-    case 2:
-        pattern->superFlash();
-        break;
-    case 3:
-        pattern->showVolts();
-        break;
-        */
+   
     case 0:
      #ifdef DEBUGMAIN
         if (shaftCounter!= lastShaft) Serial.println("Going Dark");
@@ -105,18 +116,61 @@ static int lastShaft = -1;
         break;
     case 4:
          #ifdef DEBUGMAIN
-            if (shaftCounter!= lastShaft) Serial.println("Showing MidRange");
+            if (shaftCounter!= lastShaft) Serial.println("Showing channelMovesRed");
          #endif
         lastShaft=shaftCounter;
 
-        pattern->showAllChannels();
+        pattern->channelMovesRed();
+        break;
+        
+    case 5:
+         #ifdef DEBUGMAIN
+            if (shaftCounter!= lastShaft) Serial.println("Showing colourMix");
+         #endif
+        lastShaft=shaftCounter;
+
+        pattern->colourMix();
+        break;
+    case 6:
+        #ifdef DEBUGMAIN
+            if (shaftCounter!= lastShaft) Serial.println("Showing rainbowMix");
+         #endif
+        lastShaft=shaftCounter;
+
+        pattern->rainbowMix();
+        break;
+    case 7:
+        #ifdef DEBUGMAIN
+            if (shaftCounter!= lastShaft) Serial.println("Showing randomMix");
+         #endif
+        lastShaft=shaftCounter;
+        pattern->randomMix();
+        break;
+    case 8:
+        #ifdef DEBUGMAIN
+            if (shaftCounter!= lastShaft) Serial.println("redBuild");
+         #endif
+        lastShaft=shaftCounter;
+        pattern->redBuild();
         break;
 
-    default:   
-       delay(5000);
+    case 9:
+        #ifdef DEBUGMAIN
+            if (shaftCounter!= lastShaft) Serial.println("superFlash");
+         #endif
+        lastShaft=shaftCounter;
+        pattern->superFlash();
+        break;
+      
+     default:
 #ifdef DEBUGMAIN
-Serial.println("Default");
+            if (shaftCounter!= lastShaft) {
+              Serial.print(shaftCounter);
+              Serial.println(" Default, going Dark and returning");
+            }
 #endif
+        lastShaft=shaftCounter;
+        pattern->goDark();
         break;
 
   }
