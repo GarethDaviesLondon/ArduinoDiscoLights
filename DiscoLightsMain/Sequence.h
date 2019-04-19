@@ -78,7 +78,7 @@ class Sequence
   void calibrationSample(void);
   void calibrationSample(int);
 
-private:
+//private:
 
   DotStrip *ds;
   int TrebleAnalogPin = A3;
