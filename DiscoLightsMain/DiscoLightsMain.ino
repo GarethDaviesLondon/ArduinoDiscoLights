@@ -19,6 +19,8 @@ void setup() {
       Serial.begin(57600);     //Enable serial monitor line
       Serial.println("Hello I'm Alive");  
       Serial.println("Debug Enabled");
+      Serial.print("Set for Pixels :");
+      Serial.println(ds->pixels());
 #endif
 }
 
@@ -66,13 +68,24 @@ if (shaftLongPressFlag == true )
               Serial.print("Changing light length was ");
               Serial.print(ds->pixels());
         #endif
-        if (ds->pixels()==144) {ds->setPixels(72);} else {ds->setPixels(144);}
+        switch (ds->pixels())
+        {
+          case 144:
+              ds->setPixels(72);
+              break;
+          case 72:
+               ds->setPixels(30);
+               break;
+          case 30:
+               ds->setPixels(144);
+               break;
+        }
         pattern->writeEPint(LEDSIZE,ds->pixels());
-        pattern->strobeColour(3,5);
+        pattern->strobeColour(3,ds->pixels()/10);
         delay(100);
-        pattern->strobeColour(0,5);
+        pattern->strobeColour(0,ds->pixels()/10);
         delay(100);
-        pattern->strobeWhite(1);
+        pattern->strobeWhite(3);
         #ifdef DEBUGMAIN
               Serial.print(" Now ");
               Serial.println(ds->pixels());
@@ -174,6 +187,9 @@ static int lastShaft = -1;
         break;
 
         default:
+      case 11:
+         pattern->calibrationSample(1); //look at the base pin
+         break;
 #ifdef DEBUGMAIN
             if (shaftCounter!= lastShaft) {
               Serial.print(shaftCounter);

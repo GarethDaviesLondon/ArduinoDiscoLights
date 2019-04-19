@@ -22,7 +22,7 @@
 #define SEQUENCEFULLSCALEbass 350
 
 #define SAMPLEWINDOW 64
-#define CALIBRATIONWINDOW 128
+#define CALIBRATIONWINDOW 512
 
 #ifndef EEPROMGLOBALS
 
@@ -75,6 +75,8 @@ class Sequence
   void mixItUp();
   void writeEPint(int addr, int inp);
   int readEPint(int addr);
+  void calibrationSample(void);
+  void calibrationSample(int);
 
 private:
 
@@ -92,7 +94,7 @@ private:
   
   
   void sample();
-  void calibrationSample();
+
   void loadCalibrations(void);
   void rainbow (int);
   void inverseRainbow(int);

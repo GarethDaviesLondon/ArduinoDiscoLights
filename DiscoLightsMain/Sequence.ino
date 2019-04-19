@@ -3,7 +3,8 @@
 
 //#define SEQUENCEDEUG
 //#define SEQUENCEDEUGSAMPLE
-//#define SEQUENCEDEBUGCALIBRATE
+#define SEQUENCEDEBUGCALIBRATE
+#define SHOWCALIBVALS
 
 Sequence::Sequence (DotStrip *dotin)
 {
@@ -60,10 +61,18 @@ void Sequence::sample()
               vuSample = analogRead(MidAnalogPin);
               if (vuSample>vu3Sam) vu3Sam=vuSample;;
     }
-     
-      vu1Scale=map(vu1Sam,vu1Min,vu1Peak,0,ds->pixels());
-      vu2Scale=map(vu2Sam,vu2Min,vu2Peak,0,ds->pixels());
-      vu3Scale=map(vu3Sam,vu3Min,vu3Peak,0,ds->pixels());
+
+      float scale;
+      scale = ((vu1Sam-vu1Min)/(vu1Peak-vu1Min))*ds->pixels();
+      vu1Scale=scale;
+      scale = ((vu2Sam-vu2Min)/(vu2Peak-vu2Min))*ds->pixels();
+      vu2Scale=scale;
+      scale = ((vu3Sam-vu3Min)/(vu3Peak-vu3Min))*ds->pixels();
+      vu3Scale=scale;
+      
+      //vu1Scale=map(vu1Sam,v12Min,vu1Peak,0,ds->pixels());
+      //vu2Scale=map(vu2Sam,vu2Min,vu2Peak,0,ds->pixels());
+      //vu3Scale=map(vu3Sam,vu3Min,vu3Peak,0,ds->pixels());
       
       if (vu1Scale>ds->pixels()) {vu1Scale=ds->pixels();} 
       if (vu2Scale>ds->pixels()) {vu2Scale=ds->pixels();}
@@ -86,12 +95,33 @@ void Sequence::sample()
         float sampFreq=1000/millisPerSample;
         Serial.print("Sampling Frequency (Hz)");
         Serial.println(sampFreq);
-        Serial.print("Channel Samples 1,2,3 ");
+     #endif
+     #ifdef SHOWCALIBVALS
+        Serial.print("Results 1,2,3 ");
         Serial.print(vu1Sam);
-        Serial.print(", ");
+        Serial.print(" scaled ");
+        Serial.print(vu1Scale);
+        Serial.print(":");
+        Serial.print(vu1Min);
+        Serial.print(",");
+        Serial.print(vu1Peak);
+        Serial.print("++");
         Serial.print(vu2Sam);
-        Serial.print(", ");
+        Serial.print(" scaled ");
+        Serial.print(vu2Scale);
+        Serial.print(":");
+        Serial.print(vu2Min);
+        Serial.print(",");
+        Serial.print(vu2Peak);
+        Serial.print("++");
         Serial.print(vu3Sam);
+        Serial.print(" scaled ");
+        Serial.print(vu3Scale);
+        Serial.print(":");
+        Serial.print(vu3Min);
+        Serial.print(",");
+        Serial.print(vu3Peak);
+        Serial.print("++");
         Serial.println();
       #endif 
 }
@@ -100,6 +130,15 @@ void Sequence::sample()
 //Sets the limits for light triggering based on 2 StdDev from mean as vu[1,2,3]Min and Vu[1,2,3]Peak
 
 void Sequence::calibrationSample()
+{
+    for (int inputPin=0;inputPin<3;inputPin++)
+    {
+      calibrationSample(inputPin);
+    }
+}
+
+
+void Sequence::calibrationSample(int inputPin)
 {
 
     int sampleset = CALIBRATIONWINDOW;
@@ -110,9 +149,6 @@ void Sequence::calibrationSample()
     pinSequence[2]=MidAnalogPin;
     
     int vuSamples [sampleset];
-
-    for (int inputPin=0;inputPin<3;inputPin++)
-    {
       #ifdef SEQUENCEDEBUGCALIBRATE
       Serial.println("Sampling Now");
       Serial.print("Channel ");
@@ -127,6 +163,7 @@ void Sequence::calibrationSample()
           for (int a = 0; a < sampleset; a++)
           {
               vuSamples[a] = analogRead(pinSequence[inputPin]);
+              if (inputPin==1) delay(1); //reduce sampling rate for the base
           }
       
       #ifdef SEQUENCEDEBUGCALIBRATE
@@ -149,6 +186,7 @@ void Sequence::calibrationSample()
           int vuPeak=0;
           int vuMin=1024; 
           int vuAv=0;
+          bool vufudge= false;
       
           //Process Samples for Max,Min & Mean
       
@@ -171,7 +209,11 @@ void Sequence::calibrationSample()
           vuSD=vuSD/sampleset;
           vuSD=sqrt(vuSD);
           int vuSDInt=(int)vuSD;      //It rounds down the SD to an integer, faster and less storage requirements.
-          if (vuSDInt<10) vuSDInt=10; //This provides some beat behaviour even if calibrated in silence, otherwise it's always on!
+          if (vuSDInt<10) 
+          {
+            vuSDInt=10; //This provides some beat behaviour even if calibrated in silence, otherwise it's always on!
+            vufudge=true;
+          }
       
       #ifdef SEQUENCEDEBUGCALIBRATE
         endtime=millis();
@@ -180,6 +222,8 @@ void Sequence::calibrationSample()
         elapsedMillis=endtime-starttime;
         Serial.print(" Elapsed milli sceconds ");
         Serial.println(elapsedMillis);
+       #endif
+       #ifdef SHOWCALIBVALS
         Serial.print("min,max,av,sd,sdInt : ");
         Serial.print(vuMin);
         Serial.print(":");
@@ -197,20 +241,22 @@ void Sequence::calibrationSample()
         case 0:
             if (vuAv+(2*vuSDInt) < vuPeak) { vu1Peak=vuAv+(2*vuSDInt); } else { vu1Peak=vuPeak;}
             if (vuAv-(2*vuSDInt) > vuMin) { vu1Min=vuAv-(2*vuSDInt); } else { vu1Min=vuMin;}
+            if (vufudge==true) {vu1Min=vuMin;}
             vu1Av=vuAv;
             break;
         case 1:
             if (vuAv+(2*vuSDInt) < vuPeak) { vu2Peak=vuAv+(2*vuSDInt); } else { vu2Peak=vuPeak;}
             if (vuAv-(2*vuSDInt) > vuMin) { vu2Min=vuAv-(2*vuSDInt); } else { vu2Min=vuMin;}
             vu2Av=vuAv;
+            if (vufudge==true) {vu2Min=vuMin;}
             break;
         case 2:
             if (vuAv+(2*vuSDInt) < vuPeak) { vu3Peak=vuAv+(2*vuSDInt); } else { vu3Peak=vuPeak;}
             if (vuAv-(2*vuSDInt) > vuMin) { vu3Min=vuAv-(2*vuSDInt); } else { vu3Min=vuMin;}
+            if (vufudge==true) {vu3Min=vuMin;}
             vu3Av=vuAv;
             break;
-      }
-   }
+       }
 }
 
 /*
@@ -670,13 +716,13 @@ void Sequence::showMid(int mode)
   switch (mode)
   {
     case 0:
-        barGraph(vu3Scale,255,0,0);
+        barGraph(vu3Scale,0,255,0);
         break;
     case 1:
-        inverseBarGraph(vu3Scale,255,0,0);
+        inverseBarGraph(vu3Scale,0,255,0);
         break;
     default:
-        midBarGraph(vu3Scale,255,0,0);
+        midBarGraph(vu3Scale,0,255,0);
         break;
   }
 
@@ -699,13 +745,13 @@ void Sequence::showTreble(int mode)
   switch (mode)
   {
     case 0:
-        barGraph(vu1Scale,255,0,0);
+        barGraph(vu1Scale,0,0,255);
         break;
     case 1:
-        inverseBarGraph(vu1Scale,255,0,0);
+        inverseBarGraph(vu1Scale,0,0,255);
         break;
     default:
-        midBarGraph(vu1Scale,255,0,0);
+        midBarGraph(vu1Scale,0,0,255);
         break;
   }
 #ifdef SEQUENCEDEUG
