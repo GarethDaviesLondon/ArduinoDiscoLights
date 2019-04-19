@@ -31,7 +31,7 @@ void loop ()
 #ifdef DEBUGMAIN
   if (shaftInterruptOccurred == true)
   {
-Serial.println("Interrupt has Occurred");
+   //Serial.println("Interrupt has Occurred");
   }
   if (shaftRebootFlag == true )
   {
@@ -61,6 +61,11 @@ if (shaftLongPressFlag == true )
         #ifdef DEBUGMAIN
         Serial.println("Calibration Complete");
         #endif
+    }
+
+    if (shaftCounter==1)
+    {
+      
     }
     if (shaftCounter==shaftMAX) //At far Right end, then we can toggle between various maximum LED lengths;
     {

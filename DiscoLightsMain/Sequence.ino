@@ -3,8 +3,8 @@
 
 //#define SEQUENCEDEUG
 //#define SEQUENCEDEUGSAMPLE
-#define SEQUENCEDEBUGCALIBRATE
-#define SHOWCALIBVALS
+//#define SEQUENCEDEBUGCALIBRATE
+//#define SHOWCALIBVALS
 
 Sequence::Sequence (DotStrip *dotin)
 {
@@ -63,11 +63,34 @@ void Sequence::sample()
     }
 
       float scale;
-      scale = ((vu1Sam-vu1Min)/(vu1Peak-vu1Min))*ds->pixels();
+      scale = 
+        (vu1Sam-vu1Min)
+        *ds->pixels()
+        /
+        (vu1Peak-vu1Min)
+;
+        
       vu1Scale=scale;
-      scale = ((vu2Sam-vu2Min)/(vu2Peak-vu2Min))*ds->pixels();
+
+      
+       scale = 
+        (vu2Sam-vu2Min)
+        *ds->pixels()
+        /
+        (vu2Peak-vu2Min)
+        ;
+        
+      //scale = ((vu2Sam-vu2Min)/(vu2Peak-vu2Min))*ds->pixels();
       vu2Scale=scale;
-      scale = ((vu3Sam-vu3Min)/(vu3Peak-vu3Min))*ds->pixels();
+      //scale = ((vu3Sam-vu3Min)/(vu3Peak-vu3Min))*ds->pixels();
+      
+       scale = 
+        (vu3Sam-vu3Min)
+        *ds->pixels()
+        /
+        (vu3Peak-vu2Min)
+        ;
+        
       vu3Scale=scale;
       
       //vu1Scale=map(vu1Sam,v12Min,vu1Peak,0,ds->pixels());
@@ -239,24 +262,44 @@ void Sequence::calibrationSample(int inputPin)
         switch (inputPin)
        {
         case 0:
-            if (vuAv+(2*vuSDInt) < vuPeak) { vu1Peak=vuAv+(2*vuSDInt); } else { vu1Peak=vuPeak;}
-            if (vuAv-(2*vuSDInt) > vuMin) { vu1Min=vuAv-(2*vuSDInt); } else { vu1Min=vuMin;}
+            if (vuAv+(2*vuSDInt) < vuPeak) { vu1Peak=vuAv+(1*vuSDInt); } else { vu1Peak=vuPeak;}
+            if (vuAv-(2*vuSDInt) > vuMin) { vu1Min=vuAv-(1*vuSDInt); } else { vu1Min=vuMin;}
             if (vufudge==true) {vu1Min=vuMin;}
             vu1Av=vuAv;
             break;
-        case 1:
-            if (vuAv+(2*vuSDInt) < vuPeak) { vu2Peak=vuAv+(2*vuSDInt); } else { vu2Peak=vuPeak;}
-            if (vuAv-(2*vuSDInt) > vuMin) { vu2Min=vuAv-(2*vuSDInt); } else { vu2Min=vuMin;}
+        case 1: //needs more sensitivity here as the dynamic range is rubbish on the base
+            if (vuAv+(1*vuSDInt) < vuPeak) { vu2Peak=vuAv+(1*vuSDInt); } else { vu3Peak=vuPeak;}
+            if (vuAv-(1*vuSDInt) > vuMin) { vu2Min=vuAv-(1*vuSDInt); } else { vu3Min=vuMin;}
             vu2Av=vuAv;
             if (vufudge==true) {vu2Min=vuMin;}
             break;
         case 2:
-            if (vuAv+(2*vuSDInt) < vuPeak) { vu3Peak=vuAv+(2*vuSDInt); } else { vu3Peak=vuPeak;}
-            if (vuAv-(2*vuSDInt) > vuMin) { vu3Min=vuAv-(2*vuSDInt); } else { vu3Min=vuMin;}
+            if (vuAv+(1*vuSDInt) < vuPeak) { vu3Peak=vuAv+(1*vuSDInt); } else { vu3Peak=vuPeak;}
+            if (vuAv-(1*vuSDInt) > vuMin) { vu3Min=vuAv-(1*vuSDInt); } else { vu3Min=vuMin;}
             if (vufudge==true) {vu3Min=vuMin;}
             vu3Av=vuAv;
             break;
        }
+       
+       /*
+               switch (inputPin)
+       {
+        case 0:
+            vu1Peak=vuPeak;
+            vu1Min=vuMin;
+            break;
+        case 1:
+            vu2Peak=vuPeak;
+            vu2Min=vuMin;
+            break;
+        case 2:
+            vu3Peak=vuPeak;
+            vu3Min=vuMin;
+
+            break;
+       }
+       */
+       
 }
 
 /*
