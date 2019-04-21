@@ -1,3 +1,66 @@
+/*
+ * This is the programme that was written to control lights at AFRIKA Burn April 2019
+ * Written by Gareth Davies, Brighton England
+ * 
+ * Hardware diagrams are available at:
+ * 
+ * Hardware provides analogue audio preamp followed by analogue filtering to High,Mid and Low Freq sent to Analogue inputs on the Arduino.
+ * 
+ * Defined in Sequence (where sampling occurs) 
+ *   
+  int TrebleAnalogPin = A3;
+  int BassAnalogPin = A2;
+  int MidAnalogPin = A1;
+
+  Samples are then taken over a window and peak detected before being scaled on based on a stored min-max range for the analogue signal and scaled between zero
+  and the number of LEDs on the NeoPixel array.
+
+  The min-max ranges can be automatically calibrated using the calibrate function, though in practice some tweaking seemed necessary to get an appropriate dynamic
+  range.
+  
+  Various combinations of patterns are then created based on these readings and translated into an in-memory array managed by the DotStrip class.
+
+  Writing out the array to the strip is handled by a call to DotStrip::show() - this handles the serial data calls to bit-bash the data out
+  Using Clock and Data pins defined in dotstrip.h
+
+  int clockPin = 6;
+  int dataPin = 7;
+
+  The size of the LED array is controlled by two parameters
+  one is a compiler directive in DotStrip.h
+  #define NUMPIXELS 150 // Number of LEDs in strip maximum allowed defines array bounds, what is used is controlled by the variable numPix
+
+  This is used to size the array stored in memory.
+
+  The other is a variable accessed by:
+    int pixels(void);
+    void setPixels(int);
+
+  These set the amount of the array to use. This enables switching between LED strip sizes in real-time without recompiling.
+
+  The hardware includes a ShaftEncoder with a push switch, this is connected across the D2,D3 interrupt pins, ground and Difital in D4
+
+  This is defined in ShaftEncoder.h
+
+  #define shaftPushSw 2
+  #define shaftOutputA 3
+  #define shaftOutputB 4
+
+  This enables a switching between modes which changes the pattern.
+  There is an interrupt flag which is set which helps control flow in the main loop.
+  If a button is pressed then, depending on the position of the shaft when it was pressed, either a calibration sequence or LED size switch is instigated.
+
+  To add more patterns to the array
+
+  1. Create a method with in Sequence to create the pattern
+  2. Increase the number of states allowed in the shaft encoder (or replace an existing one)
+  #define shaftMAX 11 in DiscoLights.h
+  3. Add another case to the switch in the code below
+ *
+ * 
+ */
+
+
 
 #include "DotStrip.h"
 #include "ShaftEncoder.h"
