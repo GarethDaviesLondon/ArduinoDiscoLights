@@ -1,3 +1,10 @@
+/****
+ * 
+ * This code has a fudge to remove the bass channel
+ * this is now set to be the mid-range (equal)
+ * 
+ */
+
 #include "Sequence.h"
 #include "ShaftEncoder.h"
 
@@ -34,8 +41,13 @@ void Sequence::sample()
     int sampleset = SAMPLEWINDOW;
     int starttime,stoptime,endtime;
     int pinSequence[3];
+    
+    float vu1amp=0.8;
+    float vu2amp=1.2;
+    float vu3amp=1.2;
+    
     pinSequence[0]=TrebleAnalogPin;
-    pinSequence[1]=BassAnalogPin;
+    pinSequence[1]=TrebleAnalogPin;
     pinSequence[2]=MidAnalogPin;
 
     int vuSample;
@@ -62,6 +74,11 @@ void Sequence::sample()
               if (vuSample>vu3Sam) vu3Sam=vuSample;;
     }
 
+    //Apply some gain to normalise the channels
+    vu1Sam=vu1Sam*vu1amp;
+    vu2Sam=vu2Sam*vu2amp;
+    vu3Sam=vu3Sam*vu3amp;
+    
       float scale;
       scale = 
         (vu1Sam-vu1Min)
@@ -92,6 +109,14 @@ void Sequence::sample()
         ;
         
       vu3Scale=scale;
+
+/**********************
+ * 
+ * THIS IS THE FUDGE REMOVES THE BASE SAMPLE
+ * 
+ */
+      //CANCEL THE BASE BASS SCALE
+      vu2Scale=vu3Scale;
       
       //vu1Scale=map(vu1Sam,v12Min,vu1Peak,0,ds->pixels());
       //vu2Scale=map(vu2Sam,vu2Min,vu2Peak,0,ds->pixels());
@@ -918,6 +943,7 @@ void Sequence::mixItUp()
           break;
   }
 }
+
 
 
 

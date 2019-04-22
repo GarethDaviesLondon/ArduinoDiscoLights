@@ -60,8 +60,6 @@
  * 
  */
 
-
-
 #include "DotStrip.h"
 #include "ShaftEncoder.h"
 #include "Sequence.h";
@@ -91,7 +89,12 @@ void setup() {
 void loop ()
 {
   commandline();
-  
+
+
+//Debug routine that shows sequences changing in response to interrupts.
+//Originally the code rebooted when the button was pressed, but in the 
+//arduino nano boot loader (older version) the watchdog timer reboot doesn't work due to a bug.
+//
 #ifdef DEBUGMAIN
   if (shaftInterruptOccurred == true)
   {
@@ -107,12 +110,23 @@ void loop ()
   }
 #endif
 
+  //These interrupts are used in different parts of the codebase and help the 
+  //patterns to abort execution early and send control back here.
+  //once control is back here it's important to clear the interrupt flags so that
+  //normal control can return to the seqences.
   shaftRebootFlag=false;
   shaftInterruptOccurred=false;
-
+  
+  //This block of code handles a long-press interrupt.
+  //
   if (shaftLongPressFlag == true )
     {
-      shaftLongPressFlag=false;
+  
+      shaftLongPressFlag=false; //Clear the flag
+      
+      //Execute this if we are at the 0 position and had a long-press.
+      //This executes an automatic calibration
+      //It's a reasonable starting point but tends to benefit from additional hw/sw tuning.
       if (shaftCounter==0) // Long Press in the far left condition gives a recalibration sequence;
       {
           #ifdef DEBUGMAIN
@@ -126,6 +140,11 @@ void loop ()
           Serial.println("Calibration Complete");
           #endif
       }
+
+      // Execute this if we are at the Max end of the shaft encodoer, in this case we sequence
+      // Through sizes of DOTSTAR arrays
+      // 144,72 or 30 LEDs in a strip.
+      //
       if (shaftCounter==shaftMAX) //At far Right end, then we can toggle between various maximum LED lengths;
       {
           #ifdef DEBUGMAIN
@@ -144,6 +163,10 @@ void loop ()
                  ds->setPixels(144);
                  break;
           }
+
+          //This bit of code provdes some feedback on the number of pixels selected
+          //And confirms that it's changed.
+         
           pattern->writeEPint(LEDSIZE,ds->pixels());
           pattern->strobeColour(3,ds->pixels()/10);
           delay(100);
@@ -158,9 +181,10 @@ void loop ()
     } //If ShaftLong Counter
   
 
-  static int lastShaft = -1;
+  static int lastShaft = -1;  //This is used to decide whether the shaft counter has moved.
+                              //If it has then the debug code will print out what it has selected as the new mode of operation.
 
-  switch (shaftCounter)
+  switch (shaftCounter)       //Based on the shaft encoder position, decide what pattern to display.
   {
     case 0:
      #ifdef DEBUGMAIN
@@ -240,18 +264,27 @@ void loop ()
         delay(100);
         break;
      case 10:
+     
              #ifdef DEBUGMAIN
             if (shaftCounter!= lastShaft) Serial.println("mixItUp");
          #endif
         lastShaft=shaftCounter;
         pattern->mixItUp();
         break;
-
-        default:
+        
       case 11:
-         pattern->calibrationSample(1); //look at the base pin
+            #ifdef DEBUGMAIN
+            if (shaftCounter!= lastShaft) 
+            {
+                 Serial.print(shaftCounter);
+                 Serial.println(" sample test");
+             }
+         #endif
+         pattern->calibrationSample(1); //look at the bass analoge pin and print report its values (if debug is enabeld)
          break;
-#ifdef DEBUGMAIN
+         
+      default:
+      #ifdef DEBUGMAIN
             if (shaftCounter!= lastShaft) {
               Serial.print(shaftCounter);
               Serial.println(" Default, going Dark and returning");
@@ -264,6 +297,13 @@ void loop ()
   }
 }
 
+
+/*
+ * Somewhat mixed results really.
+   Designed to implement a command line interface for calibration and the like
+   not finished, but will respond to the comand "com"
+   and print out the calibration parameters, I guess that is helpful.
+ */
 
 
 void commandline(void)
@@ -284,6 +324,10 @@ void commandline(void)
         {
           Serial.print(instr.charAt(a),HEX);
         }
+        for (int x=0;x<1000;x++)
+        {
+          
+        pattern->sample();
         Serial.println();
           Serial.println("Current Settings");
           Serial.print("Volatile 1,2,3 ");
@@ -312,6 +356,7 @@ void commandline(void)
           Serial.print(pattern->vu3Peak);
           Serial.print("++");
           Serial.println();
+        }
 
           if (instr.equals("com\n") == true )
           { 
@@ -339,3 +384,4 @@ void commandline(void)
             return NULL;
           }
 }
+

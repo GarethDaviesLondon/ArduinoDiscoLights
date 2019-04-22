@@ -11,7 +11,7 @@
 #define shaftCURRENTRUNSTATE 1
 #define shaftPROPOSEDRUNSTATE 2
 #define shaftCONFIRMLED 9 // the digital output pin connected to the panel LED.
-#define shaftMAX 11
+#define shaftMAX 13
 
 //For VU Calibration.
 #define CALCONFIRM 3
@@ -30,4 +30,5 @@
 #define LEDSIZE 22
 
 #endif
+
 

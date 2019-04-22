@@ -41,3 +41,4 @@ bool shaftLongPressFlag=false;
 bool shaftInterruptOccurred=false;
 
 #endif
+
