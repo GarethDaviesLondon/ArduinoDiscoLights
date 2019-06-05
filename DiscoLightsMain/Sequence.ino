@@ -1,13 +1,30 @@
-/****
+
+ /*
+ * This is part of the programme that was written to control lights at AFRIKA Burn April 2019
+ * Written by Gareth Davies, Brighton England
  * 
- * This code has a fudge to remove the bass channel
- * this is now set to be the mid-range (equal)
+ * Hardware diagrams are available at:
  * 
- */
+ * Hardware provides analogue audio preamp followed by analogue filtering to High,Mid and Low Freq sent to Analogue inputs on the Arduino.
+ * 
+ * This section sets up the analogue samples of the signal and is used to control a DOTSTRIP sequence based on music output
+ * 
+ * It works by making an analogue read for a a few samples on each of the intput analogue pins and then a peak detect on the sample window.
+ * There are three analogue inputs for Bass,Mid and Treble.
+ * There are two ways in which the unit scales - one is a preset range of "relative gains" between the channel so that "VU" units are roughly equivalent.
+ * This is done by running a calibration routine and storing coefficients in EEPROM on the Arduino.
+ * 
+ * The other is done in hardware and is an analogue gain control to set the average volume of the input signal. 
+ * 
+ * Once calibrated (i.e. the dgitial coefficients have been set) then the user shoudl only need to adjust the analogue volume control
+ * 
+ *
+*/
 
 #include "Sequence.h"
 #include "ShaftEncoder.h"
 
+// Various DEBUG levels using compiler directives. 
 //#define SEQUENCEDEUG
 //#define SEQUENCEDEUGSAMPLE
 //#define SEQUENCEDEBUGCALIBRATE
@@ -75,18 +92,20 @@ void Sequence::sample()
     }
 
     //Apply some gain to normalise the channels
+    //vu1amp is the gain number for each channel to even out slight differences in the analogue voltage levels.
     vu1Sam=vu1Sam*vu1amp;
     vu2Sam=vu2Sam*vu2amp;
     vu3Sam=vu3Sam*vu3amp;
+
+    ///Calculate some scales based on max/min values.
     
       float scale;
       scale = 
         (vu1Sam-vu1Min)
         *ds->pixels()
         /
-        (vu1Peak-vu1Min)
-;
-        
+        (vu1Peak-vu1Min);
+                
       vu1Scale=scale;
 
       
@@ -97,9 +116,7 @@ void Sequence::sample()
         (vu2Peak-vu2Min)
         ;
         
-      //scale = ((vu2Sam-vu2Min)/(vu2Peak-vu2Min))*ds->pixels();
       vu2Scale=scale;
-      //scale = ((vu3Sam-vu3Min)/(vu3Peak-vu3Min))*ds->pixels();
       
        scale = 
         (vu3Sam-vu3Min)
@@ -112,12 +129,12 @@ void Sequence::sample()
 
 /**********************
  * 
- * THIS IS THE FUDGE REMOVES THE BASE SAMPLE
- * 
- */
-      //CANCEL THE BASE BASS SCALE
-      vu2Scale=vu3Scale;
-      
+ * THIS IS A FUDGE REMOVES THE BASE SAMPLE
+ * If there is a problem balancing channels then this can be used to remove the base scale by making it equal to the treble one.
+ */   
+      // vu2Scale=vu3Scale; //CANCEL THE BASE BASS SCALE
+
+      //The scaling below is no longer needed as the scaling is done in the sampling.
       //vu1Scale=map(vu1Sam,v12Min,vu1Peak,0,ds->pixels());
       //vu2Scale=map(vu2Sam,vu2Min,vu2Peak,0,ds->pixels());
       //vu3Scale=map(vu3Sam,vu3Min,vu3Peak,0,ds->pixels());
@@ -129,6 +146,10 @@ void Sequence::sample()
       if (vu1Scale<0) {vu1Scale=0;} 
       if (vu2Scale<0) {vu2Scale=0;}
       if (vu3Scale<0) {vu3Scale=0;}
+
+
+      //The below are serial data outputs that can be run in debug modes. It show the channel levels and trigger points
+      //This helps to ensure that calibration is working properly.
   
       #ifdef SEQUENCEDEUGSAMPLE
         stoptime=millis();
@@ -362,7 +383,8 @@ void Sequence::calibrate(void)
   printVoltage(vu1Peak,vu1Av,vu1Min);
   Serial.print("\n");
 #endif
-  int vu1avint,vu2aving,cu3aving;
+
+  //int vu1avint,vu2aving,cu3aving;
   writeEPint( CALVU1MIN,vu1Min);
   writeEPint( CALVU1AV,vu1Av);
   writeEPint( CALVU1PEAK,vu1Peak);

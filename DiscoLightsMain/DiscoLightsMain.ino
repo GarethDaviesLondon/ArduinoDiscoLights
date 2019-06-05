@@ -189,9 +189,9 @@ void loop ()
     case 0:
      #ifdef DEBUGMAIN
         if (shaftCounter!= lastShaft) Serial.println("Going Dark");
-        lastShaft=shaftCounter;
       #endif
         pattern->goDark();
+        lastShaft=shaftCounter;
 
     break;    
     case 1:
@@ -219,8 +219,8 @@ void loop ()
     case 4:
         #ifdef DEBUGMAIN
             if (shaftCounter!= lastShaft) Serial.println("Showing Treble");
-            lastShaft=shaftCounter;
         #endif
+        lastShaft=shaftCounter;
         pattern->showTreble();  
         break;
     case 5:
@@ -228,7 +228,6 @@ void loop ()
             if (shaftCounter!= lastShaft) Serial.println("Showing channelMovesRed");
          #endif
         lastShaft=shaftCounter;
-
         pattern->channelMovesRed();
         break;
         
@@ -237,7 +236,6 @@ void loop ()
             if (shaftCounter!= lastShaft) Serial.println("Showing colourMix");
          #endif
         lastShaft=shaftCounter;
-
         pattern->colourMix();
         break;
     case 7:
@@ -245,7 +243,6 @@ void loop ()
             if (shaftCounter!= lastShaft) Serial.println("Showing rainbowMix");
          #endif
         lastShaft=shaftCounter;
-
         pattern->rainbowMix();
         break;
     case 8:
@@ -263,11 +260,10 @@ void loop ()
         pattern->superFlash(1);
         delay(100);
         break;
-     case 10:
-     
-             #ifdef DEBUGMAIN
+     case 10:     
+#ifdef DEBUGMAIN
             if (shaftCounter!= lastShaft) Serial.println("mixItUp");
-         #endif
+#endif
         lastShaft=shaftCounter;
         pattern->mixItUp();
         break;
@@ -299,7 +295,7 @@ void loop ()
 
 
 /*
- * Somewhat mixed results really.
+ * Somewhat mixed results for command line interface, in the end didn't really use this.
    Designed to implement a command line interface for calibration and the like
    not finished, but will respond to the comand "com"
    and print out the calibration parameters, I guess that is helpful.

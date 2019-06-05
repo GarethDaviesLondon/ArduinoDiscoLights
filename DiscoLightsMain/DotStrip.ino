@@ -36,7 +36,19 @@
 //#define DEBUGDOTSTRIP  // Uncomment this line to get the Object to spew out loads of stuff if you're debugging and think it has failed!
 
 
+    DotStrip::DotStrip (int numP,int clk,int dat)
+    {
+      dataPin=dat;
+      clockPin=clk;
+      ConstructBase(numP);
+    }
+
     DotStrip::DotStrip (int numP)
+    {
+      ConstructBase(numP);
+    }
+    
+    void DotStrip::ConstructBase (int numP)
     {
           if ( (numP > NUMPIXELS) | (numP < 0) )
           {
