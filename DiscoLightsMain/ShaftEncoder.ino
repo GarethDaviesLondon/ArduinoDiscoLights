@@ -11,6 +11,8 @@ void initShaftEncoder(int Min,int Max)
   pinMode(shaftOutputA,INPUT_PULLUP);
   pinMode(shaftOutputB,INPUT_PULLUP);
   pinMode(shaftPushSw,INPUT_PULLUP);
+  pinMode(hwResetControl,INPUT_PULLUP);
+  
   shaftBState = digitalRead(shaftOutputB);
   shaftAState = digitalRead(shaftOutputA); // Reads the "current" state of the outputA
   shaftALastState = shaftAState; // Updates the previous state of the outputA with the current state
@@ -69,21 +71,50 @@ void checkShaftCounter()
   //Incase that we have end-stopped.
   if (shaftCounter<sMin) {
     shaftCounter=sMin;
+    #ifdef DEBUGSHAFTENCODER
     Serial.println("reset counter to min");
+    #endif
   }
   if (shaftCounter>sMax){
     shaftCounter=sMax;
+    #ifdef DEBUGSHAFTENCODER
     Serial.println("reset counter to max");
+    #endif
   }
 }
 
 //This is a reboot function that can be used to reset the unit.
 void shaftReboot() {
-  wdt_disable();
-  wdt_enable(WDTO_15MS);
-  while (1) {}
+  shaftRebootFlag=true;
+  shaftCounter=EEPROM.read(shaftPROPOSEDRUNSTATE);
 }
 
+void shaftLongPress(){
+  shaftLongPressFlag=true;
+}
+
+float wasteTime(long int d)
+{
+    d=d*100000000;
+#ifdef DEBUGSHAFTENCODER
+      Serial.println(micros());
+      Serial.print("Starting to waste time ");
+      Serial.println(d);
+ #endif
+  double a=3.14;
+  for (int l=0;l<d;l++)
+  {
+    double b=sqrt(a);
+    a+=b;
+    a=sq(a);
+    a=a-1;
+    a=sqrt(a);
+  }
+ #ifdef DEBUGSHAFTENCODER
+      Serial.println(micros());
+      Serial.println("done");
+ #endif
+}
 
 //This flashes the designated pin (built in LED for example) the number of times recorded by the shaft encoder
 void shaftConfirm(int flashCount)
@@ -92,13 +123,53 @@ void shaftConfirm(int flashCount)
       Serial.print("Flashing the Light ");
       Serial.println(flashCount);
  #endif
+  unsigned long timerRecord,timerNow;
+  float rubbish;
   for (int a = 0;  a<=flashCount; a++)
   {
-    digitalWrite(LED_BUILTIN,HIGH);
-    delay(500);
-    digitalWrite(LED_BUILTIN,LOW);
-    delay(250);
+    digitalWrite(COMMLED,HIGH);
+    rubbish = wasteTime(50);
+    
+ /*    This code just fails, no idea what is going  on with the micros() function!
+     timerRecord=timerNow=micros();
+ #ifdef DEBUGSHAFTENCODER
+      Serial.print("Light On starting Wait at: ");
+      Serial.println(timerRecord);
+ #endif
+    while(timerNow < timerRecord+500) {
+      timerNow=micros();
+#ifdef DEBUGSHAFTENCODER
+      Serial.print("Still Waiting at : ");
+      Serial.print(timerNow);
+      Serial.print("Waiting to exceed ");
+      Serial.println(timerRecord+500);
+ #endif
+     }//Delay funtion, the delay and millis don't work during interrupts
+     */
+     
+    digitalWrite(COMMLED,LOW);
+    rubbish = wasteTime(50);
+    
+  /* This micros timer code just doesn't work!
+    timerRecord=timerNow=micros();
+ #ifdef DEBUGSHAFTENCODER
+      Serial.print("Light Off starting Wait at: ");
+      Serial.println(timerRecord);
+ #endif
+    while(timerNow < timerRecord+500) {
+      timerNow=micros();
+#ifdef DEBUGSHAFTENCODER
+      Serial.print("Still Waiting at : ");
+      Serial.print(timerNow);
+      Serial.print("Waiting to exceed ");
+      Serial.println(timerRecord+500);
+ #endif
+     }//Delay funtion, the delay and millis don't work during interrupts
+ */
+
+ 
   }
+  if (rubbish>0) return NULL;
 #ifdef DEBUGSHAFTENCODER
       Serial.println("Finished Flashing");
 #endif
@@ -107,18 +178,22 @@ void shaftConfirm(int flashCount)
 //When the switch is pushed, this will
 void shaftPushSwitchISR()
 {
+  shaftInterruptOccurred=true;
   noInterrupts();
   #ifdef DEBUGSHAFTENCODER
       Serial.println("Button Push Detected");
-      delay(500);
    #endif
-   int debounceDelay=350; // This was found by trial and error to be the amount of time needed to debounce the switch
+  int debounceDelay=DEBOUNCEDELAY; // This was found by trial and error to be the amount of time needed to debounce the switch
+  int longPressDelay=LONGPRESSDELAY;
+  
   bool state,prevState;
+
+  int start=micros();
+  int stoptime=start;
 
   //This is a debounce routine, stops the repeated calls to the interrupt.
   for (int looper=0;looper < debounceDelay;looper++)
   {
-    delay(1);
     state=digitalRead(shaftPushSw);
     if (state != prevState)
     {
@@ -127,14 +202,55 @@ void shaftPushSwitchISR()
     }
   }
   //We now have a stable switch which is not bouncing all over the place
-    
-  EEPROM.write(shaftPROPOSEDRUNSTATE,shaftCounter); //Write the current value of the shaft encoder into the EEPROM for reboot.
-  //Perform Watchdog Reboot
-  shaftReboot();
+
+  state=digitalRead(shaftPushSw);
+  prevState=state;
+  
+  while (1)
+  {
+    state=digitalRead(shaftPushSw);
+    if (prevState!=state)
+    {
+      stoptime=micros();
+      break;
+    }
+  }
+
+  #ifdef DEBUGSHAFTENCODER
+  Serial.println(start);
+  Serial.println(stoptime);
+  #endif
+
+  
+  if ((stoptime-start)>=longPressDelay)
+  {
+    #ifdef DEBUGSHAFTENCODER
+    Serial.print("Long Press Delay : Threshold ");
+    Serial.print(stoptime-start);
+    Serial.print("::");
+    Serial.println(longPressDelay);
+    #endif
+    shaftLongPress();
+  }
+  else
+  {
+    #ifdef DEBUGSHAFTENCODER
+    Serial.println("Short Press Delay : Threshold ");
+    Serial.print(stoptime-start);
+    Serial.print("::");
+    Serial.println(longPressDelay);
+    #endif
+  
+    EEPROM.write(shaftPROPOSEDRUNSTATE,shaftCounter); //Write the current value of the shaft encoder into the EEPROM for reboot.
+    shaftReboot();
+    pattern->communicate(shaftCounter);
+  }
+  interrupts();
 }
 
 void shaftRotateISR()
 {
+   shaftInterruptOccurred=true;
    noInterrupts();
    shaftBState = digitalRead(shaftOutputB);
    shaftAState = digitalRead(shaftOutputA); // Reads the "current" state of the outputA
@@ -147,14 +263,14 @@ void shaftRotateISR()
        // If the outputB state is different to the outputA state, that means the encoder is rotating clockwise
        if (shaftBState != shaftAState) 
        { 
-         shaftCounter ++;
-       } else {
          shaftCounter --;
+       } else {
+         shaftCounter ++;
        }
-     
      }
    }
    checkShaftCounter();
+   shaftConfirm(shaftCounter);
         
 #ifdef DEBUGSHAFTENCODER
      Serial.print ("A Postition Last ");
@@ -166,10 +282,11 @@ void shaftRotateISR()
      Serial.print (" Now ");
      Serial.print (shaftBState);
      Serial.print(" Position: ");
-     Serial.println(shaftCounter);
+    Serial.println(shaftCounter);
 #endif
 
    shaftALastState = shaftAState; // Updates the previous state of the outputA with the current state
    shaftBLastState = shaftBState;
    interrupts();
 }
+

@@ -1,4 +1,4 @@
-#define NUMPIXELS 144 // Number of LEDs in strip
+#define NUMPIXELS 150 // Number of LEDs in strip maximum allowed defines array bounds, what is used is controlled by the variable numPix
 #ifndef DOTSTRIPH
 #define DOTSTRIPH
 
@@ -17,15 +17,14 @@ class DotStrip
     void setGlobalBrightness(byte Brightness);
     void offAll(void);
     void offOne(int a);
-    int pixels(void)
-    {
-      return (numPixels);
-    }
+    int pixels(void);
+    void setPixels(int);
+
     
   private:
   
     int clockPin = 6;
-    int dataPin = 5;
+    int dataPin = 7;
     int numPixels = NUMPIXELS;
     int StripBrightness;
     byte LEDARRAY[NUMPIXELS][4];
@@ -35,6 +34,8 @@ class DotStrip
     void startTX();
     void endTX();
     void testPins();
+
 };
 
 #endif
+
